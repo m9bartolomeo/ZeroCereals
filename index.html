@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CerealFree R&D</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g9:#0d2b1a;--g8:#1a5c38;--g7:#2e7d50;--g6:#3d9e67;--g2:#a8d5b8;--g1:#d6efe0;--g0:#eff8f2;
+  --a8:#92400e;--a6:#b45309;--a1:#fef3c7;--a0:#fffbeb;
+  --r8:#991b1b;--r1:#fee2e2;
+  --b8:#1e40af;--b1:#dbeafe;
+  --n9:#111827;--n7:#374151;--n5:#6b7280;--n3:#d1d5db;--n1:#f3f4f6;--n0:#f9fafb;
+  --wh:#ffffff;
+  --sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--n0);color:var(--n9);min-height:100vh}
+button{font-family:var(--sans);cursor:pointer}
+input,select,textarea{font-family:var(--sans)}
+
+/* NAV */
+.nav{background:var(--g9);padding:10px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
+.nav-brand{color:var(--g2);font-weight:600;font-size:14px;letter-spacing:.04em;white-space:nowrap;flex-shrink:0}
+.nav-brand span{color:var(--g6)}
+.nav-tabs{display:flex;gap:2px;flex-wrap:wrap;flex:1}
+.nt{padding:6px 13px;color:var(--g2);background:transparent;border:none;font-size:12px;font-weight:500;border-radius:6px;white-space:nowrap;transition:all .15s;letter-spacing:.02em}
+.nt:hover{background:rgba(255,255,255,.1);color:#fff}
+.nt.on{background:var(--g7);color:#fff}
+.nav-st{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--g2);flex-shrink:0;font-family:var(--mono)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--g6);flex-shrink:0}
+.dot.loading{background:#fbbf24;animation:blink 1s infinite}
+.dot.error{background:#ef4444}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* LAYOUT */
+.page{max-width:1380px;margin:0 auto;padding:1.5rem}
+.ph{margin-bottom:1.25rem}
+.pt{font-size:20px;font-weight:600;color:var(--n9)}
+.ps{font-size:12px;color:var(--n5);margin-top:3px}
+
+/* CARD */
+.card{background:var(--wh);border:1px solid var(--n3);border-radius:12px;overflow:hidden}
+.ch{padding:14px 18px;border-bottom:1px solid var(--n1);display:flex;align-items:center;justify-content:space-between}
+.ct{font-size:13px;font-weight:600}
+.cb{padding:14px 18px}
+
+/* TAGS */
+.tag{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
+.t-teorico{background:var(--b1);color:var(--b8)}
+.t-sperimentale{background:var(--g1);color:var(--g8)}
+.t-legume{background:var(--g0);color:var(--g8);border:1px solid var(--g1)}
+.t-pseudo{background:#f3e8ff;color:#6b21a8;border:1px solid #d8b4fe}
+.t-amido{background:var(--a0);color:var(--a8);border:1px solid #fcd34d}
+.t-frutta{background:#fff1f2;color:#9f1239;border:1px solid #fecdd3}
+.t-seme{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.t-legante{background:#fdf4ff;color:#7e22ce;border:1px solid #e9d5ff}
+.t-alga{background:var(--b1);color:var(--b8);border:1px solid #bfdbfe}
+.t-fungo{background:var(--n1);color:var(--n7);border:1px solid var(--n3)}
+.t-radice{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
+
+/* SEARCH */
+.sbar{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.sinput{flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--n3);border-radius:8px;font-size:13px;color:var(--n9);background:var(--wh)}
+.sinput:focus{outline:none;border-color:var(--g6)}
+.fbtn{padding:6px 13px;border:1px solid var(--n3);border-radius:8px;font-size:11px;font-weight:500;background:var(--wh);color:var(--n7);transition:all .15s}
+.fbtn:hover,.fbtn.on{background:var(--g8);color:var(--wh);border-color:var(--g8)}
+
+/* INGREDIENT GRID */
+.igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.icard{background:var(--wh);border:1px solid var(--n3);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .15s}
+.icard:hover{border-color:var(--g6);box-shadow:0 0 0 3px var(--g0)}
+.iname{font-size:13px;font-weight:600;color:var(--n9);margin-bottom:1px}
+.ilatin{font-size:10px;color:var(--n5);font-style:italic;margin-bottom:6px}
+.ibars{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.br{display:flex;align-items:center;gap:5px}
+.bl{font-size:9px;color:var(--n5);width:32px;flex-shrink:0;font-family:var(--mono)}
+.bt{flex:1;height:4px;background:var(--n1);border-radius:2px;overflow:hidden}
+.bf{height:100%;border-radius:2px}
+.bp{background:var(--g7)}.ba{background:var(--a6)}.bl2{background:#dc2626}
+.ifoot{display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--n5);font-family:var(--mono)}
+.att{font-size:10px;font-weight:500;color:var(--g7);background:var(--g0);border:1px solid var(--g1);border-radius:10px;padding:1px 6px;display:inline-block;margin-top:3px}
+
+/* DETAIL PANEL */
+.dp{position:fixed;top:0;right:0;width:400px;height:100vh;background:var(--wh);border-left:1px solid var(--n3);overflow-y:auto;z-index:200;transform:translateX(100%);transition:transform .25s ease;padding-top:10px}
+.dp.open{transform:translateX(0)}
+.dclose{position:sticky;top:10px;left:calc(100% - 44px);background:var(--n1);border:none;border-radius:6px;width:28px;height:28px;font-size:16px;color:var(--n5);display:flex;align-items:center;justify-content:center;margin:0 12px 0 auto}
+.dclose:hover{background:var(--n3)}
+.dhead{padding:6px 18px 0}
+.dname{font-size:17px;font-weight:700;color:var(--n9)}
+.dlatin{font-size:11px;color:var(--n5);font-style:italic;margin:2px 0 8px}
+.dsec{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--n5);margin:14px 18px 6px}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:0 18px}
+.dstat{background:var(--n0);border-radius:8px;padding:9px 11px}
+.dstat-l{font-size:10px;color:var(--n5);font-family:var(--mono)}
+.dstat-v{font-size:14px;font-weight:600;color:var(--n9);margin-top:1px}
+.dnote{margin:0 18px;background:var(--g0);border-radius:8px;padding:11px 13px;font-size:12px;color:var(--n7);line-height:1.6}
+.datt{margin:0 18px;background:var(--a0);border-left:3px solid var(--a6);border-radius:0 8px 8px 0;padding:9px 13px;font-size:12px;color:var(--a8);line-height:1.6}
+.duses{padding:0 18px 20px;display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.uchip{font-size:11px;padding:3px 10px;border-radius:12px;background:var(--n1);color:var(--n7);border:1px solid var(--n3)}
+
+/* ADDITIVI */
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px}
+.acard{background:var(--wh);border:1px solid var(--n3);border-radius:10px;padding:13px 15px}
+.aname{font-size:13px;font-weight:600;color:var(--n9);margin-bottom:3px}
+.acat{font-size:11px;margin-bottom:6px}
+.cat-antiossidante{color:var(--g7)}.cat-umettante{color:var(--a6)}.cat-conservante{color:var(--r8)}.cat-miglioratore{color:var(--b8)}
+.adose{font-family:var(--mono);font-size:11px;color:var(--n5);margin-bottom:5px}
+.anote{font-size:11px;color:var(--n7);line-height:1.5}
+.aetich{font-size:11px;color:var(--g7);font-style:italic;margin-top:5px}
+.abusta{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:var(--n1);color:var(--n5);margin-top:3px}
+
+/* BLEND */
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
+.bcard{background:var(--wh);border:1px solid var(--n3);border-radius:12px;padding:15px;cursor:pointer;transition:all .15s}
+.bcard:hover{border-color:var(--g6)}
+.bname{font-size:14px;font-weight:600;color:var(--n9);margin-bottom:2px}
+.bcat{font-size:11px;color:var(--n5);margin-bottom:9px}
+.bscores{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:9px}
+.bsc{text-align:center;background:var(--n0);border-radius:6px;padding:6px 3px}
+.bscv{font-size:16px;font-weight:700}
+.bscl{font-size:9px;color:var(--n5);margin-top:1px}
+.bmeta{display:flex;gap:6px;font-size:10px;color:var(--n5);font-family:var(--mono)}
+.bpills{display:flex;flex-wrap:wrap;gap:3px;margin-top:7px}
+.bpill{font-size:10px;padding:2px 7px;border-radius:8px;background:var(--g0);color:var(--g8);border:1px solid var(--g1)}
+
+/* MATRICI */
+.mwrap{overflow-x:auto}
+.mx{border-collapse:collapse;font-size:11px}
+.mx th{font-size:9px;font-weight:500;color:var(--n5);padding:5px 3px;text-align:center;white-space:nowrap;font-family:var(--mono)}
+.mx th.rh{text-align:right;padding-right:8px;font-family:var(--sans);font-size:10px}
+.mx td{width:32px;height:32px;text-align:center;cursor:pointer;font-size:11px;font-weight:600;border:1px solid var(--n1);transition:opacity .1s}
+.mx td:hover{opacity:.7}
+.s5{background:#065f46;color:#fff}.s4{background:#d1fae5;color:#065f46}
+.s3{background:var(--n1);color:var(--n5)}.s2{background:#fef3c7;color:#92400e}
+.s1{background:#fee2e2;color:#991b1b}.s0{background:var(--n0);color:var(--n3)}
+.mleg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.mleg-i{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--n5)}
+.mleg-d{width:11px;height:11px;border-radius:3px}
+.mdet{margin-top:10px;padding:12px 13px;background:var(--n0);border-radius:8px;font-size:12px;color:var(--n7);line-height:1.6;min-height:40px}
+.itabs{display:flex;gap:4px;margin-bottom:14px}
+.itab{padding:6px 14px;border:1px solid var(--n3);border-radius:8px;font-size:12px;font-weight:500;background:var(--wh);color:var(--n7);transition:all .15s}
+.itab.on{background:var(--g7);color:#fff;border-color:var(--g7)}
+
+/* DOE */
+.dgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+.doecard{background:var(--wh);border:1px solid var(--n3);border-radius:12px;overflow:hidden}
+.doehead{padding:11px 15px;background:var(--g9);color:var(--wh);display:flex;align-items:center;justify-content:space-between}
+.doeid{font-family:var(--mono);font-size:13px;font-weight:500}
+.doest{font-size:10px;padding:2px 8px;border-radius:10px}
+.dst-v{background:rgba(255,255,255,.15);color:rgba(255,255,255,.8)}
+.dst-c{background:var(--g6);color:#fff}
+.doebody{padding:13px 15px}
+.dparams{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:8px}
+.dparam{background:var(--n0);border-radius:6px;padding:7px 9px}
+.dparam-l{font-size:9px;color:var(--n5);font-family:var(--mono)}
+.dparam-v{font-size:14px;font-weight:600;color:var(--n9)}
+.dfixed{font-size:10px;color:var(--n5);font-family:var(--mono)}
+.btncomp{width:100%;margin-top:9px;padding:8px;border:1px solid var(--g7);border-radius:8px;background:transparent;color:var(--g7);font-size:12px;font-weight:500;transition:all .15s}
+.btncomp:hover{background:var(--g7);color:#fff}
+.btncomp.done{border-color:var(--n3);color:var(--n5);background:var(--n0);cursor:default}
+
+/* MODAL */
+.mover{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto}
+.modal{background:var(--wh);border-radius:14px;width:100%;max-width:660px}
+.mhead{padding:16px 20px 12px;border-bottom:1px solid var(--n1);display:flex;align-items:center;justify-content:space-between}
+.mtitle{font-size:15px;font-weight:600;color:var(--n9)}
+.mclose{background:var(--n1);border:none;border-radius:6px;width:28px;height:28px;font-size:16px;color:var(--n5)}
+.mbody{padding:16px 20px;max-height:72vh;overflow-y:auto}
+.msec{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--n5);margin:14px 0 7px}
+.msec:first-child{margin-top:0}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ff{display:flex;flex-direction:column;gap:3px}
+.ff.full{grid-column:1/-1}
+.flbl{font-size:10px;font-weight:500;color:var(--n7);font-family:var(--mono)}
+.finput{padding:7px 10px;border:1px solid var(--n3);border-radius:7px;font-size:13px;color:var(--n9);background:var(--wh)}
+.finput:focus{outline:none;border-color:var(--g6)}
+.mfoot{padding:12px 20px;border-top:1px solid var(--n1);display:flex;justify-content:flex-end;gap:8px}
+.bcancel{padding:8px 16px;border:1px solid var(--n3);border-radius:8px;background:var(--wh);font-size:13px;color:var(--n7)}
+.bsave{padding:8px 18px;border:none;border-radius:8px;background:var(--g7);color:#fff;font-size:13px;font-weight:500}
+.bsave:hover{background:var(--g8)}.bsave:disabled{opacity:.5;cursor:not-allowed}
+.balert{padding:9px 20px;border:none;border-radius:8px;background:var(--g7);color:#fff;font-size:13px;font-weight:500;width:100%;margin-top:8px}
+.balert:hover{background:var(--g8)}
+
+/* CONFIG */
+.cfcard{background:var(--wh);border:1px solid var(--n3);border-radius:12px;padding:22px;max-width:580px}
+.cflbl{font-size:12px;font-weight:600;color:var(--n7);margin-bottom:5px}
+.cfinput{width:100%;padding:9px 11px;border:1px solid var(--n3);border-radius:8px;font-size:12px;font-family:var(--mono);color:var(--n9);background:var(--n0)}
+.cfinput:focus{outline:none;border-color:var(--g6);background:var(--wh)}
+.cfnote{font-size:11px;color:var(--n5);margin-top:5px;line-height:1.5}
+.cfok{margin-top:12px;padding:10px 13px;border-radius:8px;font-size:12px;background:var(--g0);color:var(--g8);border:1px solid var(--g1)}
+.cferr{margin-top:12px;padding:10px 13px;border-radius:8px;font-size:12px;background:var(--r1);color:var(--r8)}
+.bprimary{padding:9px 20px;border:none;border-radius:8px;background:var(--g7);color:#fff;font-size:13px;font-weight:500}
+.bprimary:hover{background:var(--g8)}
+.sep{border:none;border-top:1px solid var(--n1);margin:20px 0}
+
+/* UTIL */
+.empty{text-align:center;padding:3rem;color:var(--n5);font-size:13px}
+.spin{display:inline-block;width:18px;height:18px;border:2px solid var(--n3);border-top-color:var(--g6);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.info-box{background:var(--a0);border:1px solid #fcd34d;border-radius:10px;padding:11px 14px;font-size:12px;color:var(--a8);margin-bottom:1.25rem;line-height:1.5}
+.res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:7px}
+.res-s{background:var(--g0);border-radius:6px;padding:5px 7px;text-align:center}
+.res-v{font-size:13px;font-weight:600;color:var(--g7)}
+.res-l{font-size:9px;color:var(--n5)}
+
+@media(max-width:600px){
+  .page{padding:1rem}
+  .fgrid{grid-template-columns:1fr}
+  .dp{width:100%}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useCallback,useRef} = React;
+
+const PUB_ID = "2PACX-1vTeB7rz_IzbKB5fvCk7GarfSUSWUMYetXUbPsHs86-aoPCBUkTz9bKHvBzBHoKqoh6Ss4UU0z8mRled";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtbdrFqm_0E1Wqq0ikT-sa_J9Dlh2Us9zhD4u9PQ-is1Z8ixI810xWKYpIKsUlJo0M1Q/exec";
+const LS_ID = "cf_pub_id", LS_SC = "cf_script", LS_DATA = "cf_data";
+
+function parseCSV(txt){
+  const lines = txt.trim().split("\n"); if(!lines.length) return [];
+  const hdrs = lines[0].split(",").map(h=>h.trim().replace(/^"|"$/g,""));
+  return lines.slice(1).map(line=>{
+    const vals=[]; let cur="",inQ=false;
+    for(const c of line){ if(c==='"'){inQ=!inQ}else if(c===','&&!inQ){vals.push(cur);cur=""}else cur+=c; }
+    vals.push(cur);
+    const obj={};
+    hdrs.forEach((h,i)=>obj[h]=(vals[i]||"").replace(/^"|"$/g,"").trim());
+    return obj;
+  }).filter(r=>Object.values(r).some(v=>v));
+}
+
+async function fetchTab(pubId, tab){
+  const id = pubId.startsWith("2PACX")||pubId.startsWith("e/") ? pubId.replace(/^e\//,"") : null;
+  const url = id
+    ? `https://docs.google.com/spreadsheets/d/e/${id}/pub?output=csv&sheet=${encodeURIComponent(tab)}`
+    : `https://docs.google.com/spreadsheets/d/${pubId}/pub?output=csv&sheet=${encodeURIComponent(tab)}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("HTTP "+res.status);
+  const txt = await res.text();
+  if(txt.includes("<!DOCTYPE")||txt.includes("<html")) throw new Error("Non pubblicato come CSV");
+  return parseCSV(txt);
+}
+
+async function writeSheet(scriptUrl, payload){
+  const res = await fetch(scriptUrl,{method:"POST",body:JSON.stringify(payload)});
+  const d = await res.json();
+  if(!d.ok) throw new Error(d.error||"Errore scrittura");
+  return d;
+}
+
+const FAM = {legume:"Legume",pseudo:"Pseudo-cereale",amido:"Amido/Tubero",frutta:"Frutta secca",seme:"Seme",legante:"Legante",alga:"Alga",fungo:"Fungo",radice:"Radice/Altro"};
+const FAMS = ["tutti","legume","pseudo","amido","frutta","seme","legante","alga","fungo","radice"];
+const SC_CLS = ["s0","s1","s2","s3","s4","s5"];
+const SC_LBL = ["—","Incompatibili","Criticità","Neutro","Buona","Ottima"];
+
+function App(){
+  const [tab,setTab] = useState("ingredienti");
+  const [pubId,setPubId] = useState(()=>localStorage.getItem(LS_ID)||PUB_ID);
+  const [scriptUrl,setScriptUrl] = useState(()=>localStorage.getItem(LS_SC)||SCRIPT_URL);
+  const [data,setData] = useState({ing:[],add:[],blend:[],prove:[],reol:[],chim:[],sens:[]});
+  const [loading,setLoading] = useState(false);
+  const [conn,setConn] = useState("idle");
+
+  const load = useCallback(async()=>{
+    if(!pubId){setConn("idle");return;}
+    setLoading(true);setConn("loading");
+    try{
+      const [ing,add,blend,prove,reol,chim,sens] = await Promise.all([
+        fetchTab(pubId,"Ingredienti"),fetchTab(pubId,"Additivi"),
+        fetchTab(pubId,"Blend"),fetchTab(pubId,"Prove_DoE"),
+        fetchTab(pubId,"Matrici_Reol"),fetchTab(pubId,"Matrici_Chim"),fetchTab(pubId,"Matrici_Sens"),
+      ]);
+      const d={ing,add,blend,prove,reol,chim,sens};
+      setData(d); localStorage.setItem(LS_DATA,JSON.stringify(d)); setConn("ok");
+    }catch(e){
+      const c=localStorage.getItem(LS_DATA);
+      if(c){setData(JSON.parse(c));} setConn("error");
+    }
+    setLoading(false);
+  },[pubId]);
+
+  useEffect(()=>{load();},[load]);
+
+  const TABS=[{id:"ingredienti",l:"Ingredienti"},{id:"additivi",l:"Additivi"},{id:"blend",l:"Blend"},
+               {id:"matrici",l:"Matrici"},{id:"doe",l:"Prove DoE"},{id:"config",l:"Configurazione"}];
+
+  return(
+    <div>
+      <nav className="nav">
+        <div className="nav-brand">CerealFree <span>R&D</span></div>
+        <div className="nav-tabs">
+          {TABS.map(t=><button key={t.id} className={`nt${tab===t.id?" on":""}`} onClick={()=>setTab(t.id)}>{t.l}</button>)}
+        </div>
+        <div className="nav-st">
+          <div className={`dot${conn==="loading"?" loading":conn==="error"?" error":""}`}/>
+          <span>{conn==="ok"?"Connesso":conn==="loading"?"Caricamento...":conn==="error"?"Offline":"—"}</span>
+          {conn==="ok"&&<button onClick={load} style={{background:"none",border:"none",color:"var(--g2)",fontSize:13,cursor:"pointer",padding:"0 2px"}}>↻</button>}
+        </div>
+      </nav>
+      {tab==="ingredienti"&&<IngredientiPage data={data.ing} loading={loading}/>}
+      {tab==="additivi"&&<AdditiviPage data={data.add} loading={loading}/>}
+      {tab==="blend"&&<BlendPage data={data.blend} loading={loading}/>}
+      {tab==="matrici"&&<MatriciPage data={data} loading={loading} scriptUrl={scriptUrl} onRefresh={load}/>}
+      {tab==="doe"&&<DoePage data={data} loading={loading} scriptUrl={scriptUrl} onRefresh={load}/>}
+      {tab==="config"&&<ConfigPage pubId={pubId} setPubId={setPubId} scriptUrl={scriptUrl} setScriptUrl={setScriptUrl} conn={conn} onSave={()=>{localStorage.setItem(LS_ID,pubId);localStorage.setItem(LS_SC,scriptUrl);load();}}/>}
+    </div>
+  );
+}
+
+function IngredientiPage({data,loading}){
+  const [q,setQ]=useState(""),[fam,setFam]=useState("tutti"),[sel,setSel]=useState(null);
+  const filt=data.filter(i=>{
+    const mf=fam==="tutti"||i.famiglia===fam;
+    const mq=!q||i.nome?.toLowerCase().includes(q.toLowerCase())||i.note_tecnologiche?.toLowerCase().includes(q.toLowerCase())||i.applicazioni?.toLowerCase().includes(q.toLowerCase());
+    return mf&&mq;
+  });
+  const pct=(v,mx)=>Math.min(Math.round((parseFloat(v)||0)/mx*100),100);
+  return(
+    <div className="page">
+      <div className="ph"><div className="pt">Database ingredienti</div><div className="ps">{filt.length} di {data.length} ingredienti · Clicca per il dettaglio completo</div></div>
+      <div className="sbar">
+        <input className="sinput" placeholder="Cerca nome, uso, proprietà..." value={q} onChange={e=>setQ(e.target.value)}/>
+        {FAMS.map(f=><button key={f} className={`fbtn${fam===f?" on":""}`} onClick={()=>setFam(f)}>{f==="tutti"?"Tutti":FAM[f]}</button>)}
+      </div>
+      {loading?<div className="empty"><div className="spin"/></div>:!data.length?<div className="empty">Nessun dato — vai in Configurazione e verifica la connessione.</div>:!filt.length?<div className="empty">Nessun risultato.</div>:(
+        <div className="igrid">
+          {filt.map(i=>(
+            <div key={i.id} className="icard" onClick={()=>setSel(i)}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:4}}>
+                <div className="iname">{i.nome}</div>
+                <span className={`tag t-${i.famiglia}`}>{FAM[i.famiglia]||i.famiglia}</span>
+              </div>
+              <div className="ilatin">{i.nome_latino}</div>
+              {i.attivato==="si"&&<span className="att">⚡ Attivato</span>}
+              <div className="ibars">
+                <div className="br"><span className="bl">Prot</span><div className="bt"><div className="bf bp" style={{width:pct(i.proteina_g,57)+"%"}}/></div><span style={{fontSize:9,color:"var(--n5)",fontFamily:"var(--mono)"}}>{i.proteina_g}g</span></div>
+                <div className="br"><span className="bl">Amid</span><div className="bt"><div className="bf ba" style={{width:pct(i.amido_g,98)+"%"}}/></div><span style={{fontSize:9,color:"var(--n5)",fontFamily:"var(--mono)"}}>{i.amido_g}g</span></div>
+                <div className="br"><span className="bl">Lip</span><div className="bt"><div className="bf bl2" style={{width:pct(i.lipidi_g,76)+"%"}}/></div><span style={{fontSize:9,color:"var(--n5)",fontFamily:"var(--mono)"}}>{i.lipidi_g}g</span></div>
+              </div>
+              <div className="ifoot">
+                <span>IG {i.ig||"<5"}</span>
+                <span>Gel {parseFloat(i.temp_gel_c)>0?i.temp_gel_c+"°C":"—"}</span>
+                <span className={`tag t-${i.stato}`}>{i.stato==="teorico"?"teorico":"✓ valid."}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {sel&&(
+        <div className="dp open">
+          <button className="dclose" onClick={()=>setSel(null)}>×</button>
+          <div className="dhead">
+            <div className="dname">{sel.nome}</div>
+            <div className="dlatin">{sel.nome_latino}</div>
+            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+              <span className={`tag t-${sel.famiglia}`}>{FAM[sel.famiglia]||sel.famiglia}</span>
+              {sel.attivato==="si"&&<span className="att">⚡ Attivato</span>}
+              <span className={`tag t-${sel.stato}`}>{sel.stato}</span>
+            </div>
+          </div>
+          <div className="dsec">Profilo nutrizionale (per 100g)</div>
+          <div className="dgrid">
+            {[["Proteine",sel.proteina_g+"g"],["Amido/Carboidrati",sel.amido_g+"g"],["Lipidi",sel.lipidi_g+"g"],
+              ["Indice glicemico",sel.ig||"<5"],["T° gelatinizzazione",parseFloat(sel.temp_gel_c)>0?sel.temp_gel_c+"°C":"n/a"],
+              ["Assorbimento idrico",sel.assorbimento_idrico],["pH impasto",sel.ph_impasto],["Shelf life",sel.shelf_life]
+            ].map(([l,v])=>(
+              <div key={l} className="dstat"><div className="dstat-l">{l}</div><div className="dstat-v">{v}</div></div>
+            ))}
+          </div>
+          {sel.attivato==="si"&&sel.protocollo_attivazione&&(
+            <><div className="dsec">Protocollo attivazione</div><div className="datt">{sel.protocollo_attivazione}</div></>
+          )}
+          <div className="dsec">Note tecnologiche</div>
+          <div className="dnote">{sel.note_tecnologiche}</div>
+          {sel.applicazioni&&(
+            <><div className="dsec">Applicazioni</div>
+            <div className="duses">{sel.applicazioni.split(",").map(a=><span key={a} className="uchip">{a.trim()}</span>)}</div></>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdditiviPage({data,loading}){
+  const [f,setF]=useState("tutti");
+  const cats=["tutti","antiossidante","umettante","conservante naturale","miglioratore strutturale"];
+  const filt=data.filter(a=>f==="tutti"||a.categoria===f);
+  return(
+    <div className="page">
+      <div className="ph"><div className="pt">Additivi clean label</div><div className="ps">Zero numeri E — solo ingredienti riconoscibili dal consumatore</div></div>
+      <div className="sbar" style={{marginBottom:"1rem"}}>{cats.map(c=><button key={c} className={`fbtn${f===c?" on":""}`} onClick={()=>setF(c)}>{c==="tutti"?"Tutti":c}</button>)}</div>
+      {loading?<div className="empty"><div className="spin"/></div>:!data.length?<div className="empty">Nessun dato.</div>:(
+        <div className="agrid">
+          {filt.map(a=>(
+            <div key={a.id} className="acard">
+              <div className="aname">{a.nome}</div>
+              <div className={`acat cat-${a.categoria.replace(/ /g,"-")}`}>{a.categoria}</div>
+              <div className="adose">Dose: {a.dose_min_pct}–{a.dose_max_pct}% · <strong>Busta {a.busta}</strong></div>
+              <div style={{marginBottom:5}}><span className={`tag t-${a.stato}`}>{a.stato}</span></div>
+              <div className="anote">{a.meccanismo}</div>
+              {a.note_tecniche&&<div className="anote" style={{marginTop:5,color:"var(--n5)"}}>{a.note_tecniche}</div>}
+              <div className="aetich">In etichetta: «{a.in_etichetta}»</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BlendPage({data,loading}){
+  const [sel,setSel]=useState(null);
+  const parseComp=j=>{try{return JSON.parse(j);}catch{return{};}};
+  const scoreColor=v=>+v>=80?"var(--g7)":+v>=65?"var(--a6)":"var(--r8)";
+  return(
+    <div className="page">
+      <div className="ph"><div className="pt">Blend validati</div><div className="ps">8 formulazioni di partenza per categoria di prodotto · Clicca per i dettagli</div></div>
+      {loading?<div className="empty"><div className="spin"/></div>:!data.length?<div className="empty">Nessun dato.</div>:(
+        <div className="bgrid">
+          {data.map(b=>{
+            const comp=parseComp(b.composizione_json);
+            return(
+              <div key={b.id} className="bcard" onClick={()=>setSel(b)}>
+                <div className="bname">{b.nome}</div>
+                <div className="bcat">{b.categoria}</div>
+                <div className="bscores">
+                  {[["Struttura",b.score_struttura],["Sapore",b.score_sapore],["Lievit.",b.score_lievitazione],["Shelf",b.score_shelflife]].map(([l,v])=>(
+                    <div key={l} className="bsc"><div className="bscv" style={{color:scoreColor(v)}}>{v||"—"}</div><div className="bscl">{l}</div></div>
+                  ))}
+                </div>
+                <div className="bmeta"><span>IG {b.ig_stimato}</span><span>·</span><span>Prot {b.proteine_g}g</span><span>·</span><span>Idr {b.idratazione_min}–{b.idratazione_max}%</span></div>
+                <div className="bpills">
+                  {Object.entries(comp).slice(0,5).map(([k,v])=><span key={k} className="bpill">{k.replace(/_/g," ")} {v}%</span>)}
+                  {Object.keys(comp).length>5&&<span className="bpill">+{Object.keys(comp).length-5}</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {sel&&(
+        <div className="mover" onClick={e=>e.target===e.currentTarget&&setSel(null)}>
+          <div className="modal">
+            <div className="mhead"><div className="mtitle">{sel.nome}</div><button className="mclose" onClick={()=>setSel(null)}>×</button></div>
+            <div className="mbody">
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+                <span className="tag t-teorico">{sel.stato}</span>
+                <span style={{fontSize:11,color:"var(--n5)"}}>IG {sel.ig_stimato} · Prot {sel.proteine_g}g · Idr {sel.idratazione_min}–{sel.idratazione_max}%</span>
+              </div>
+              <div className="msec">Composizione</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:10}}>
+                {Object.entries(parseComp(sel.composizione_json)).map(([k,v])=>(
+                  <span key={k} style={{padding:"3px 9px",borderRadius:8,background:"var(--g0)",border:"1px solid var(--g1)",fontSize:12,color:"var(--g8)"}}>{k.replace(/_/g," ")}: {v}%</span>
+                ))}
+              </div>
+              <div className="msec">Score performance</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:10}}>
+                {[["Struttura",sel.score_struttura],["Sapore",sel.score_sapore],["Lievitazione",sel.score_lievitazione],["Shelf life",sel.score_shelflife]].map(([l,v])=>(
+                  <div key={l} style={{background:"var(--n0)",borderRadius:8,padding:10,textAlign:"center"}}>
+                    <div style={{fontSize:20,fontWeight:700,color:+v>=80?"var(--g7)":+v>=65?"var(--a6)":"var(--r8)"}}>{v}</div>
+                    <div style={{fontSize:10,color:"var(--n5)",marginTop:2}}>{l}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="msec">Note di processo</div>
+              <div style={{background:"var(--n0)",borderRadius:8,padding:"11px 13px",fontSize:13,color:"var(--n7)",lineHeight:1.6}}>{sel.note_processo}</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const MX_ING=[
+  {id:"1",n:"Ceci"},{id:"5",n:"Piselli"},{id:"2",n:"Lent.rosse"},{id:"16",n:"Lupino"},
+  {id:"22",n:"Saraceno"},{id:"23",n:"Quinoa"},{id:"26",n:"Amaranto"},
+  {id:"31",n:"Tapioca"},{id:"30",n:"Fecola"},{id:"41",n:"Mandorle"},{id:"43",n:"Cocco"},
+  {id:"51",n:"Chia"},{id:"50",n:"Lino"},{id:"59",n:"Psyllium"},{id:"60",n:"Xantano"}
+];
+
+function MatriciPage({data,loading,scriptUrl,onRefresh}){
+  const [mt,setMt]=useState("reol"),[det,setDet]=useState(null);
+  const getMx=()=>mt==="reol"?data.reol:mt==="chim"?data.chim:data.sens;
+  const getScore=(a,b)=>{const mx=getMx();const r=mx.find(x=>(x.id_a===a&&x.id_b===b)||(x.id_a===b&&x.id_b===a));return r?parseInt(r.punteggio)||3:3;};
+  const getInfo=(a,b)=>{const mx=getMx();return mx.find(x=>(x.id_a===a&&x.id_b===b)||(x.id_a===b&&x.id_b===a))||null;};
+  const labels={reol:"Reologica",chim:"Chimica",sens:"Sensoriale"};
+  return(
+    <div className="page">
+      <div className="ph"><div className="pt">Matrici di compatibilità</div><div className="ps">Clicca su una cella per il dettaglio · ● = nota disponibile · Dati sperimentali aggiornano i punteggi teorici</div></div>
+      <div className="itabs">{["reol","chim","sens"].map(t=><button key={t} className={`itab${mt===t?" on":""}`} onClick={()=>setMt(t)}>{labels[t]}</button>)}</div>
+      <div className="mleg">
+        {[5,4,3,2,1].map(s=><div key={s} className="mleg-i"><div className={`mleg-d ${SC_CLS[s]}`}/><span>{s} — {SC_LBL[s]}</span></div>)}
+      </div>
+      {loading?<div className="empty"><div className="spin"/></div>:(
+        <div className="card"><div className="cb">
+          <div className="mwrap">
+            <table className="mx">
+              <thead><tr><th className="rh"/>{MX_ING.map(i=><th key={i.id} title={i.n}>{i.n}</th>)}</tr></thead>
+              <tbody>
+                {MX_ING.map(row=>(
+                  <tr key={row.id}>
+                    <th className="rh">{row.n}</th>
+                    {MX_ING.map(col=>{
+                      if(col.id===row.id)return<td key={col.id} className="s0">—</td>;
+                      const s=getScore(row.id,col.id);const info=getInfo(row.id,col.id);
+                      return<td key={col.id} className={SC_CLS[s]} title={`${row.n} × ${col.n}`} onClick={()=>setDet({a:row,b:col,s,info})}>{info?"●":s}</td>;
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {det&&(
+            <div className="mdet">
+              <div style={{fontWeight:600,fontSize:13,marginBottom:6}}>
+                {det.a.n} × {det.b.n}
+                <span className={SC_CLS[det.s]} style={{marginLeft:8,padding:"1px 7px",borderRadius:8,fontSize:11}}>{det.s} — {SC_LBL[det.s]}</span>
+                {det.info&&<span className={`tag t-${det.info.stato}`} style={{marginLeft:4}}>{det.info.stato}</span>}
+              </div>
+              {det.info?det.info.note:"Punteggio neutro (3) per default — nessuna nota specifica. Da validare sperimentalmente."}
+              {det.info?.fonte&&<div style={{fontSize:10,color:"var(--n5)",marginTop:4}}>Fonte: {det.info.fonte}</div>}
+            </div>
+          )}
+        </div></div>
+      )}
+    </div>
+  );
+}
+
+const DOE_PLAN=[{n:1,ceci:25,idr:79,t:26},{n:2,ceci:35,idr:79,t:26},{n:3,ceci:25,idr:82,t:26},{n:4,ceci:35,idr:82,t:26},{n:5,ceci:25,idr:79,t:28},{n:6,ceci:35,idr:79,t:28},{n:7,ceci:25,idr:82,t:28},{n:8,ceci:35,idr:82,t:28}];
+
+function DoePage({data,loading,scriptUrl,onRefresh}){
+  const [comp,setComp]=useState(null),[form,setForm]=useState({}),[saving,setSaving]=useState(false);
+  const getP=n=>data.prove.find(p=>p.numero_prova===String(n));
+  const open=n=>{const p=getP(n);setForm(p?{...p}:{numero_prova:String(n),blend_id:"B01"});setComp(n);};
+  const calcAcqua=()=>{
+    const tw=(3*23)-(parseFloat(form.t_ambiente_c)||20)-(parseFloat(form.t_farine_c)||19)-(parseFloat(form.friction_factor)||12);
+    setForm(f=>({...f,t_acqua_calcolata_c:tw.toFixed(1)}));
+  };
+  const save=async()=>{
+    setSaving(true);
+    try{
+      const row=[
+        form.id||`DOE-00${form.numero_prova}`,"B01",form.numero_prova,form.data||"",
+        form.operatore||"",form.luogo||"",form.tipo_impastatrice||"",form.modello_impastatrice||"",
+        form.tipo_forno||"",form.modello_forno||"",form.tipo_cella||"",form.strumenti||"",
+        form.t_ambiente_c||"",form.ur_ambiente||"",form.t_farine_c||"",form.friction_factor||"",
+        form.t_acqua_calcolata_c||"",form.t_acqua_usata||"",form.t_impasto_uscita||"",form.ph_impasto||"",
+        form.idratazione_pct||"",form.ceci_pct||"",form.quinoa_pct||"10",form.psyllium_pct||"4",form.lm_pct||"15",
+        form.note_impasto||"",
+        form.t_punt_c||"",form.ur_punt||"",form.dur_punt||"",form.vol_punt||"",
+        form.t_app_c||"",form.ur_app||"",form.dur_app||"",form.vol_app||"",
+        "220",form.dur_f1||"","185",form.dur_f2||"","175",form.dur_f3||"",form.t_interna||"",
+        form.vol_spec||"",form.durezza||"",form.col_l||"",form.col_a||"",form.col_b||"",
+        form.ph_mollica||"",form.aw||"",form.umidita||"",
+        form.sapore||"",form.texture||"",form.croc||"",form.retro||"",form.sodd||"",
+        form.note_sens||"",form.foto||"",form.note_gen||"",form.esito||""
+      ];
+      await writeSheet(scriptUrl,{action:"append",sheet:"Prove_DoE",row});
+      await onRefresh(); setComp(null);
+    }catch(e){alert("Errore: "+e.message);}
+    setSaving(false);
+  };
+  const F=({l,id,type="text",ph=""})=>(
+    <div className="ff">
+      <label className="flbl">{l}</label>
+      <input className="finput" type={type} placeholder={ph} value={form[id]||""} onChange={e=>setForm(f=>({...f,[id]:e.target.value}))}/>
+    </div>
+  );
+  return(
+    <div className="page">
+      <div className="ph"><div className="pt">Piano sperimentale DoE</div><div className="ps">8 prove · Fattoriale completo 2³ · Psyllium 4% e LM 15% fissi</div></div>
+      <div className="info-box">Esegui le prove in ordine casuale per minimizzare l'errore sperimentale da variabili ambientali non controllate. Compila la scheda immediatamente dopo ogni prova.</div>
+      {loading?<div className="empty"><div className="spin"/></div>:(
+        <div className="dgrid2">
+          {DOE_PLAN.map(piano=>{
+            const p=getP(piano.n); const done=p&&p.t_interna_fine_c;
+            return(
+              <div key={piano.n} className="doecard">
+                <div className="doehead">
+                  <span className="doeid">Prova {String(piano.n).padStart(2,"0")}</span>
+                  <span className={`doest ${done?"dst-c":"dst-v"}`}>{done?"Completata":"Da eseguire"}</span>
+                </div>
+                <div className="doebody">
+                  <div className="dparams">
+                    <div className="dparam"><div className="dparam-l">Ceci</div><div className="dparam-v">{piano.ceci}%</div></div>
+                    <div className="dparam"><div className="dparam-l">Idrataz.</div><div className="dparam-v">{piano.idr}%</div></div>
+                    <div className="dparam"><div className="dparam-l">T liev.</div><div className="dparam-v">{piano.t}°C</div></div>
+                  </div>
+                  <div className="dfixed">Fissi: Psyllium 4% · LM 15% · Quinoa 10%</div>
+                  {done&&(
+                    <div className="res-grid">
+                      {[["Vol.spec.",p.volume_specifico_ml_g,"ml/g"],["T int.",p.t_interna_fine_c,"°C"],["aw",p.aw_prodotto,""]].map(([l,v,u])=>(
+                        <div key={l} className="res-s"><div className="res-v">{v||"—"}{u}</div><div className="res-l">{l}</div></div>
+                      ))}
+                    </div>
+                  )}
+                  <button className={`btncomp${done?" done":""}`} onClick={()=>open(piano.n)}>
+                    {done?"Modifica dati prova":"Compila scheda prova"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {comp&&(
+        <div className="mover" onClick={e=>e.target===e.currentTarget&&setComp(null)}>
+          <div className="modal">
+            <div className="mhead"><div className="mtitle">Prova {String(comp).padStart(2,"0")} — Scheda raccolta dati</div><button className="mclose" onClick={()=>setComp(null)}>×</button></div>
+            <div className="mbody">
+              <div className="msec">Contesto e attrezzatura</div>
+              <div className="fgrid">
+                <F l="Data" id="data" type="date"/>
+                <F l="Operatore" id="operatore"/>
+                <F l="Luogo" id="luogo" ph="es. Cucina chef, Lab XY"/>
+                <F l="Tipo impastatrice" id="tipo_impastatrice" ph="spirale / forcella / bracci"/>
+                <F l="Modello impastatrice" id="modello_impastatrice"/>
+                <F l="Tipo forno" id="tipo_forno" ph="rotativo / platea / ventilato"/>
+                <F l="Modello forno" id="modello_forno"/>
+                <F l="Cella lievitazione" id="tipo_cella" ph="es. Häussler TX"/>
+                <div className="ff full">
+                  <label className="flbl">Strumenti di misura utilizzati</label>
+                  <input className="finput" placeholder="es. termometro Testo 104, pH-metro Hanna, misuratore aw Rotronic..." value={form.strumenti||""} onChange={e=>setForm(f=>({...f,strumenti:e.target.value}))}/>
+                </div>
+              </div>
+              <div className="msec">Condizioni ambientali e calcolo T acqua</div>
+              <div className="fgrid">
+                <F l="T ambiente (°C)" id="t_ambiente_c" type="number"/>
+                <F l="UR ambiente (%)" id="ur_ambiente" type="number"/>
+                <F l="T farine (°C)" id="t_farine_c" type="number"/>
+                <div className="ff">
+                  <label className="flbl">Friction factor impastatrice</label>
+                  <div style={{display:"flex",gap:5}}>
+                    <input className="finput" type="number" placeholder="10–15" value={form.friction_factor||""} onChange={e=>setForm(f=>({...f,friction_factor:e.target.value}))} style={{flex:1}}/>
+                    <button onClick={calcAcqua} style={{padding:"0 10px",border:"1px solid var(--g6)",borderRadius:7,background:"var(--g0)",color:"var(--g7)",fontSize:11,cursor:"pointer",whiteSpace:"nowrap"}}>Calcola</button>
+                  </div>
+                </div>
+                <F l="T acqua calcolata (°C)" id="t_acqua_calcolata_c" type="number"/>
+                <F l="T acqua usata (°C)" id="t_acqua_usata" type="number"/>
+                <F l="T impasto uscita (°C) ← target 22–24" id="t_impasto_uscita" type="number"/>
+                <F l="pH impasto" id="ph_impasto" type="number"/>
+                <F l="Idratazione effettiva (%)" id="idratazione_pct" type="number" ph={String(DOE_PLAN[comp-1]?.idr)}/>
+                <div className="ff full">
+                  <label className="flbl">Note impasto (aspetto, comportamento, anomalie)</label>
+                  <textarea className="finput" rows={2} value={form.note_impasto||""} onChange={e=>setForm(f=>({...f,note_impasto:e.target.value}))}/>
+                </div>
+              </div>
+              <div className="msec">Lievitazione</div>
+              <div className="fgrid">
+                <F l="T puntatura (°C)" id="t_punt_c" type="number"/>
+                <F l="UR puntatura (%)" id="ur_punt" type="number"/>
+                <F l="Durata puntatura (min)" id="dur_punt" type="number"/>
+                <F l="Volume aumento puntatura (%)" id="vol_punt" type="number"/>
+                <F l="T apretto (°C)" id="t_app_c" type="number"/>
+                <F l="UR apretto (%)" id="ur_app" type="number"/>
+                <F l="Durata apretto (min)" id="dur_app" type="number"/>
+                <F l="Volume aumento apretto (%)" id="vol_app" type="number"/>
+              </div>
+              <div className="msec">Cottura — profilo 3 fasi (T di default preimpostate)</div>
+              <div className="fgrid">
+                <F l="Durata fase 1 — 220°C vapore (min)" id="dur_f1" type="number" ph="12–15"/>
+                <F l="Durata fase 2 — 185°C (min)" id="dur_f2" type="number" ph="20–25"/>
+                <F l="Durata fase 3 — 175°C aperto (min)" id="dur_f3" type="number" ph="10–15"/>
+                <F l="T interna fine cottura (°C) ← CCP" id="t_interna" type="number" ph="94–97"/>
+              </div>
+              <div className="msec">Misurazioni prodotto finito</div>
+              <div className="fgrid">
+                <F l="Volume specifico (ml/g)" id="vol_spec" type="number"/>
+                <F l="Durezza mollica (N)" id="durezza" type="number"/>
+                <F l="Colore crosta L*" id="col_l" type="number"/>
+                <F l="Colore crosta a*" id="col_a" type="number"/>
+                <F l="Colore crosta b*" id="col_b" type="number"/>
+                <F l="pH mollica" id="ph_mollica" type="number"/>
+                <F l="aw prodotto" id="aw" type="number" ph="0.94–0.96"/>
+                <F l="Umidità (%)" id="umidita" type="number" ph="38–42"/>
+              </div>
+              <div className="msec">Valutazione sensoriale — scala 1–9</div>
+              <div className="fgrid">
+                <F l="Sapore" id="sapore" type="number" ph="1–9"/>
+                <F l="Texture / Masticabilità" id="texture" type="number" ph="1–9"/>
+                <F l="Croccantezza crosta" id="croc" type="number" ph="1–9"/>
+                <F l="Retrogusto" id="retro" type="number" ph="1–9"/>
+                <F l="Soddisfazione complessiva" id="sodd" type="number" ph="1–9"/>
+                <div className="ff full">
+                  <label className="flbl">Note sensoriali libere</label>
+                  <textarea className="finput" rows={2} value={form.note_sens||""} onChange={e=>setForm(f=>({...f,note_sens:e.target.value}))}/>
+                </div>
+              </div>
+              <div className="msec">Conclusioni prova</div>
+              <div className="fgrid">
+                <F l="URL foto prodotto" id="foto" ph="https://..."/>
+                <div className="ff">
+                  <label className="flbl">Esito complessivo</label>
+                  <select className="finput" value={form.esito||""} onChange={e=>setForm(f=>({...f,esito:e.target.value}))}>
+                    <option value="">Seleziona...</option>
+                    <option value="ottimo">Ottimo — da approfondire</option>
+                    <option value="buono">Buono</option>
+                    <option value="sufficiente">Sufficiente</option>
+                    <option value="insufficiente">Insufficiente</option>
+                    <option value="fallito">Fallito — analizzare cause</option>
+                  </select>
+                </div>
+                <div className="ff full">
+                  <label className="flbl">Note generali</label>
+                  <textarea className="finput" rows={2} value={form.note_gen||""} onChange={e=>setForm(f=>({...f,note_gen:e.target.value}))}/>
+                </div>
+              </div>
+            </div>
+            <div className="mfoot">
+              <button className="bcancel" onClick={()=>setComp(null)}>Annulla</button>
+              <button className="bsave" onClick={save} disabled={saving}>{saving?"Salvataggio...":"Salva nel Google Sheet"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ConfigPage({pubId,setPubId,scriptUrl,setScriptUrl,conn,onSave}){
+  const [lid,setLid]=useState(pubId),[lsc,setLsc]=useState(scriptUrl);
+  return(
+    <div className="page">
+      <div className="ph"><div className="pt">Configurazione</div><div className="ps">Connetti il tool al tuo Google Sheet</div></div>
+      <div className="cfcard">
+        <div style={{marginBottom:18}}>
+          <div className="cflbl">Google Sheet — ID di pubblicazione</div>
+          <input className="cfinput" value={lid} onChange={e=>setLid(e.target.value)} placeholder="2PACX-1v... oppure ID del foglio"/>
+          <div className="cfnote">
+            Usa l'ID di pubblicazione dalla finestra "Pubblica sul web" (inizia con <strong>2PACX...</strong>).<br/>
+            Oppure l'ID del foglio dall'URL del browser (dopo <code>/d/</code>).
+          </div>
+        </div>
+        <div style={{marginBottom:18}}>
+          <div className="cflbl">URL Web App (Apps Script — per scrittura)</div>
+          <input className="cfinput" value={lsc} onChange={e=>setLsc(e.target.value)} placeholder="https://script.google.com/macros/s/..."/>
+        </div>
+        <button className="bprimary" onClick={()=>{setPubId(lid);setScriptUrl(lsc);localStorage.setItem("cf_pub_id",lid);localStorage.setItem("cf_script",lsc);onSave();}}>
+          Salva e verifica connessione
+        </button>
+        {conn==="ok"&&<div className="cfok">Connessione attiva — dati caricati correttamente dal Google Sheet.</div>}
+        {conn==="error"&&<div className="cferr">Connessione fallita. Verifica che il foglio sia pubblicato come CSV (File → Condividi → Pubblica sul web → formato CSV) e che l'ID sia corretto.</div>}
+        <hr className="sep"/>
+        <div className="cflbl" style={{marginBottom:8}}>Come pubblicare il Google Sheet come CSV</div>
+        <div className="cfnote">
+          1. Apri il Google Sheet<br/>
+          2. File → Condividi → Pubblica sul web<br/>
+          3. Seleziona "Intero documento" e formato "Valori separati da virgola (CSV)"<br/>
+          4. Clicca "Pubblica"<br/>
+          5. Copia la parte dell'URL che inizia con <strong>2PACX...</strong> e incollala qui sopra
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
