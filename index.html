@@ -232,21 +232,19 @@ function parseCSV(txt){
     for(const c of line){ if(c==='"'){inQ=!inQ}else if(c===','&&!inQ){vals.push(cur);cur=""}else cur+=c; }
     vals.push(cur);
     const obj={};
-    hdrs.forEach((h,i)=>obj[h]=(vals[i]||"").replace(/^"|"$/g,"").trim());
+    hdrs.forEach((h,i)=>obj[h]=(vals[i]||"").replace(/^"|"$/g,"").replace(/\r/g,"").trim());
     return obj;
   }).filter(r=>Object.values(r).some(v=>v));
 }
 
 async function fetchTab(pubId, tab){
-  const id = pubId.startsWith("2PACX")||pubId.startsWith("e/") ? pubId.replace(/^e\//,"") : null;
-  const url = id
-    ? `https://docs.google.com/spreadsheets/d/e/${id}/pub?output=csv&sheet=${encodeURIComponent(tab)}`
-    : `https://docs.google.com/spreadsheets/d/${pubId}/pub?output=csv&sheet=${encodeURIComponent(tab)}`;
+  const scriptUrl = localStorage.getItem("cf_script") || SCRIPT_URL;
+  const url = scriptUrl + "?sheet=" + encodeURIComponent(tab);
   const res = await fetch(url);
   if(!res.ok) throw new Error("HTTP "+res.status);
-  const txt = await res.text();
-  if(txt.includes("<!DOCTYPE")||txt.includes("<html")) throw new Error("Non pubblicato come CSV");
-  return parseCSV(txt);
+  const json = await res.json();
+  if(!json.ok) throw new Error(json.error || "Errore lettura: "+tab);
+  return json.data || [];
 }
 
 async function writeSheet(scriptUrl, payload){
@@ -393,7 +391,7 @@ function IngredientiPage({data,loading}){
 function AdditiviPage({data,loading}){
   const [f,setF]=useState("tutti");
   const cats=["tutti","antiossidante","umettante","conservante naturale","miglioratore strutturale"];
-  const filt=data.filter(a=>f==="tutti"||a.categoria===f);
+  const filt=data.filter(a=>{if(!a||!a.nome)return false;return f==="tutti"||(a.categoria||"")===f;});
   return(
     <div className="page">
       <div className="ph"><div className="pt">Additivi clean label</div><div className="ps">Zero numeri E — solo ingredienti riconoscibili dal consumatore</div></div>
@@ -403,7 +401,7 @@ function AdditiviPage({data,loading}){
           {filt.map(a=>(
             <div key={a.id} className="acard">
               <div className="aname">{a.nome}</div>
-              <div className={`acat cat-${a.categoria.replace(/ /g,"-")}`}>{a.categoria}</div>
+              <div className={`acat cat-${(a.categoria||"").replace(/ /g,"-")}`}>{a.categoria||""}</div>
               <div className="adose">Dose: {a.dose_min_pct}–{a.dose_max_pct}% · <strong>Busta {a.busta}</strong></div>
               <div style={{marginBottom:5}}><span className={`tag t-${a.stato}`}>{a.stato}</span></div>
               <div className="anote">{a.meccanismo}</div>
@@ -434,10 +432,10 @@ function BlendPage({data,loading}){
                 <div className="bcat">{b.categoria}</div>
                 <div className="bscores">
                   {[["Struttura",b.score_struttura],["Sapore",b.score_sapore],["Lievit.",b.score_lievitazione],["Shelf",b.score_shelflife]].map(([l,v])=>(
-                    <div key={l} className="bsc"><div className="bscv" style={{color:scoreColor(v)}}>{v||"—"}</div><div className="bscl">{l}</div></div>
+                    <div key={l} className="bsc"><div className="bscv" style={{color:scoreColor(v)}}>{v&&v!=="0"?parseInt(v)||v:"—"}</div><div className="bscl">{l}</div></div>
                   ))}
                 </div>
-                <div className="bmeta"><span>IG {b.ig_stimato}</span><span>·</span><span>Prot {b.proteine_g}g</span><span>·</span><span>Idr {b.idratazione_min}–{b.idratazione_max}%</span></div>
+                <div className="bmeta"><span>IG {parseInt(b.ig_stimato)||b.ig_stimato||"—"}</span><span>·</span><span>Prot {parseInt(b.proteine_g)||b.proteine_g||"—"}g</span><span>·</span><span>Idr {b.idratazione_min||"—"}–{b.idratazione_max||"—"}%</span></div>
                 <div className="bpills">
                   {Object.entries(comp).slice(0,5).map(([k,v])=><span key={k} className="bpill">{k.replace(/_/g," ")} {v}%</span>)}
                   {Object.keys(comp).length>5&&<span className="bpill">+{Object.keys(comp).length-5}</span>}
@@ -466,7 +464,7 @@ function BlendPage({data,loading}){
               <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:10}}>
                 {[["Struttura",sel.score_struttura],["Sapore",sel.score_sapore],["Lievitazione",sel.score_lievitazione],["Shelf life",sel.score_shelflife]].map(([l,v])=>(
                   <div key={l} style={{background:"var(--n0)",borderRadius:8,padding:10,textAlign:"center"}}>
-                    <div style={{fontSize:20,fontWeight:700,color:+v>=80?"var(--g7)":+v>=65?"var(--a6)":"var(--r8)"}}>{v}</div>
+                    <div style={{fontSize:20,fontWeight:700,color:+v>=80?"var(--g7)":+v>=65?"var(--a6)":"var(--r8)"}}>{parseInt(v)||v}</div>
                     <div style={{fontSize:10,color:"var(--n5)",marginTop:2}}>{l}</div>
                   </div>
                 ))}
@@ -491,8 +489,9 @@ const MX_ING=[
 function MatriciPage({data,loading,scriptUrl,onRefresh}){
   const [mt,setMt]=useState("reol"),[det,setDet]=useState(null);
   const getMx=()=>mt==="reol"?data.reol:mt==="chim"?data.chim:data.sens;
-  const getScore=(a,b)=>{const mx=getMx();const r=mx.find(x=>(x.id_a===a&&x.id_b===b)||(x.id_a===b&&x.id_b===a));return r?parseInt(r.punteggio)||3:3;};
-  const getInfo=(a,b)=>{const mx=getMx();return mx.find(x=>(x.id_a===a&&x.id_b===b)||(x.id_a===b&&x.id_b===a))||null;};
+  const normId=v=>String(v||"").trim().replace(/\.0$/,"").replace(/\r/,"");
+  const getScore=(a,b)=>{const mx=getMx();const na=normId(a),nb=normId(b);const r=mx.find(x=>{ const xa=normId(x.id_a),xb=normId(x.id_b);return(xa===na&&xb===nb)||(xa===nb&&xb===na);});return r?parseInt(r.punteggio)||3:3;};
+  const getInfo=(a,b)=>{const mx=getMx();const na=normId(a),nb=normId(b);return mx.find(x=>{const xa=normId(x.id_a),xb=normId(x.id_b);return(xa===na&&xb===nb)||(xa===nb&&xb===na);})||null;};
   const labels={reol:"Reologica",chim:"Chimica",sens:"Sensoriale"};
   return(
     <div className="page">
@@ -750,7 +749,7 @@ function ConfigPage({pubId,setPubId,scriptUrl,setScriptUrl,conn,onSave}){
           Salva e verifica connessione
         </button>
         {conn==="ok"&&<div className="cfok">Connessione attiva — dati caricati correttamente dal Google Sheet.</div>}
-        {conn==="error"&&<div className="cferr">Connessione fallita. Verifica che il foglio sia pubblicato come CSV (File → Condividi → Pubblica sul web → formato CSV) e che l'ID sia corretto.</div>}
+        {conn==="error"&&<div className="cferr">Connessione fallita. Verifica che l'URL della Web App (Apps Script) sia corretto e che lo script sia pubblicato con accesso "Chiunque".</div>}
         <hr className="sep"/>
         <div className="cflbl" style={{marginBottom:8}}>Come pubblicare il Google Sheet come CSV</div>
         <div className="cfnote">
