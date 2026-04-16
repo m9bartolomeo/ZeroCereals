@@ -1,0 +1,46 @@
+name: Sync KB
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # ogni notte alle 02:00 UTC
+  workflow_dispatch:       # avvio manuale da browser
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install gspread google-auth pymysql pandas
+
+      - name: Write Google credentials
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          echo "$GOOGLE_SERVICE_ACCOUNT_JSON" > /tmp/credentials.json
+
+      - name: Run sync
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          GOOGLE_CREDENTIALS_PATH: /tmp/credentials.json
+          SHEET_ID: 1LGNkmM3K-iVwqJ5sRYe0zeIQZEQBZTfTCyVIf4BaZfQ
+        run: python scripts/sync_kb.py
+
+      - name: Commit updated JSON
+        run: |
+          git config user.name "ZeroCereals Bot"
+          git config user.email "bot@metodonove.com"
+          git add public/data/*.json
+          git diff --cached --quiet || git commit -m "sync: KB aggiornata $(date -u '+%Y-%m-%d %H:%M') UTC"
+          git push
