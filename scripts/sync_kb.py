@@ -1,5 +1,5 @@
 """
-sync_kb.py — Sincronizza Google Sheet → MySQL + genera JSON statici
+sync_kb.py — Sincronizza Google Sheet → MySQL via SSH tunnel + genera JSON statici
 Eseguito da GitHub Actions ogni notte alle 2:00 UTC
 """
 
@@ -9,19 +9,19 @@ import pymysql
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime, date
+from sshtunnel import SSHTunnelForwarder
 
 # ─── CONFIG ───────────────────────────────────────────────────
 SHEET_ID = os.environ["SHEET_ID"]
 SA_JSON  = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
 
-DB_CONFIG = {
-    "host":    os.environ["DB_HOST"],
-    "db":      os.environ["DB_NAME"],
-    "user":    os.environ["DB_USER"],
-    "passwd":  os.environ["DB_PASS"],
-    "charset": "utf8mb4",
-    "cursorclass": pymysql.cursors.DictCursor,
-}
+SSH_HOST = os.environ.get("SSH_HOST", "hostingweb32.netsons.net")
+SSH_USER = os.environ.get("SSH_USER", "dhfmzeyo")
+SSH_KEY  = os.path.expanduser("~/.ssh/zc_actions")
+
+DB_NAME  = os.environ["DB_NAME"]
+DB_USER  = os.environ["DB_USER"]
+DB_PASS  = os.environ["DB_PASS"]
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -39,8 +39,17 @@ def connect_sheet():
     gc = gspread.authorize(creds)
     return gc.open_by_key(SHEET_ID)
 
-def connect_db():
-    return pymysql.connect(**DB_CONFIG)
+def connect_db_via_tunnel(tunnel):
+    return pymysql.connect(
+        host="127.0.0.1",
+        port=tunnel.local_bind_port,
+        db=DB_NAME,
+        user=DB_USER,
+        passwd=DB_PASS,
+        charset="utf8mb4",
+        cursorclass=pymysql.cursors.DictCursor,
+        connect_timeout=10,
+    )
 
 # ─── HELPER ───────────────────────────────────────────────────
 def safe(val, t=str):
@@ -51,11 +60,8 @@ def safe(val, t=str):
     except:
         return None
 
-def safe_float(val):
-    return safe(val, float)
-
-def safe_int(val):
-    return safe(val, int)
+def safe_float(val):  return safe(val, float)
+def safe_int(val):    return safe(val, int)
 
 def safe_date(val):
     if not val or str(val).strip() == "":
@@ -74,6 +80,8 @@ def upsert(conn, table, data, pk):
     vals = list(data.values())
     placeholders = ", ".join(["%s"] * len(cols))
     updates = ", ".join([f"`{c}` = VALUES(`{c}`)" for c in cols if c != pk])
+    if not updates:
+        return
     sql = (f"INSERT INTO `{table}` ({', '.join(f'`{c}`' for c in cols)}) "
            f"VALUES ({placeholders}) "
            f"ON DUPLICATE KEY UPDATE {updates}")
@@ -149,7 +157,7 @@ def sync_ingredienti(sh, conn):
         upsert(conn, "ingredienti", data, "id")
         count += 1
     conn.commit()
-    log(f"  Ingredienti sincronizzati: {count}")
+    log(f"  Ingredienti: {count}")
 
 # ─── SYNC IG PER STATO ────────────────────────────────────────
 def sync_ig_per_stato(sh, conn):
@@ -164,30 +172,20 @@ def sync_ig_per_stato(sh, conn):
     for r in rows:
         if not r.get("ingrediente_id"):
             continue
-        data = {
-            "ingrediente_id": safe_int(r.get("ingrediente_id")),
-            "stato_processo": safe(r.get("stato_processo")),
-            "ig_valore": safe_int(r.get("ig_valore")),
-            "ig_fonte": safe(r.get("ig_fonte")),
-            "note": safe(r.get("note")),
-            "data_inserimento": safe_date(r.get("data_inserimento")),
-        }
-        data = {k: v for k, v in data.items() if v is not None}
-        if "ingrediente_id" in data and "stato_processo" in data:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "INSERT INTO ingredienti_ig_per_stato "
-                    "(ingrediente_id, stato_processo, ig_valore, ig_fonte, note, data_inserimento) "
-                    "VALUES (%s,%s,%s,%s,%s,%s) "
-                    "ON DUPLICATE KEY UPDATE "
-                    "ig_valore=VALUES(ig_valore), ig_fonte=VALUES(ig_fonte), note=VALUES(note)",
-                    [data.get("ingrediente_id"), data.get("stato_processo"),
-                     data.get("ig_valore"), data.get("ig_fonte"),
-                     data.get("note"), data.get("data_inserimento")]
-                )
-            count += 1
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO ingredienti_ig_per_stato "
+                "(ingrediente_id, stato_processo, ig_valore, ig_fonte, note, data_inserimento) "
+                "VALUES (%s,%s,%s,%s,%s,%s) "
+                "ON DUPLICATE KEY UPDATE "
+                "ig_valore=VALUES(ig_valore), ig_fonte=VALUES(ig_fonte), note=VALUES(note)",
+                [safe_int(r.get("ingrediente_id")), safe(r.get("stato_processo")),
+                 safe_int(r.get("ig_valore")), safe(r.get("ig_fonte")),
+                 safe(r.get("note")), safe_date(r.get("data_inserimento"))]
+            )
+        count += 1
     conn.commit()
-    log(f"  IG per stato sincronizzati: {count}")
+    log(f"  IG per stato: {count}")
 
 # ─── SYNC ADDITIVI ────────────────────────────────────────────
 def sync_additivi(sh, conn):
@@ -224,7 +222,7 @@ def sync_additivi(sh, conn):
         upsert(conn, "additivi", data, "id")
         count += 1
     conn.commit()
-    log(f"  Additivi sincronizzati: {count}")
+    log(f"  Additivi: {count}")
 
 # ─── SYNC BLEND ───────────────────────────────────────────────
 def sync_blend(sh, conn):
@@ -255,7 +253,7 @@ def sync_blend(sh, conn):
         upsert(conn, "blend", data, "id")
         count += 1
     conn.commit()
-    log(f"  Blend sincronizzati: {count}")
+    log(f"  Blend: {count}")
 
 # ─── SYNC MATRICI ─────────────────────────────────────────────
 def sync_matrice(sh, conn, tab_name, table_name, pk_a, pk_b):
@@ -273,36 +271,38 @@ def sync_matrice(sh, conn, tab_name, table_name, pk_a, pk_b):
         if not a or not b:
             continue
         punteggio = safe_int(r.get("punteggio"))
-        note = safe(r.get("note"))
-        fonte = safe(r.get("fonte"))
-        stato = safe(r.get("stato")) or "letteratura"
-        data_val = safe_date(r.get("data"))
-
-        if table_name == "matrici_additivi_ingredienti":
-            tipo = safe(r.get("tipo_interazione"))
-            with conn.cursor() as cur:
-                cur.execute(
-                    "INSERT INTO matrici_additivi_ingredienti "
-                    "(additivo_id, ingrediente_id, tipo_interazione, punteggio, note, fonte, stato, data) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s) "
-                    "ON DUPLICATE KEY UPDATE "
-                    "tipo_interazione=VALUES(tipo_interazione), punteggio=VALUES(punteggio), "
-                    "note=VALUES(note), fonte=VALUES(fonte)",
-                    [a, safe_int(b), tipo, punteggio, note, fonte, stato, data_val]
-                )
-        else:
-            with conn.cursor() as cur:
-                cur.execute(
-                    f"INSERT INTO {table_name} "
-                    f"({pk_a}, {pk_b}, punteggio, note, fonte, stato, data) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s) "
-                    "ON DUPLICATE KEY UPDATE "
-                    "punteggio=VALUES(punteggio), note=VALUES(note), fonte=VALUES(fonte)",
-                    [safe_int(a), safe_int(b), punteggio, note, fonte, stato, data_val]
-                )
-        count += 1
+        note      = safe(r.get("note"))
+        fonte     = safe(r.get("fonte"))
+        stato     = safe(r.get("stato")) or "letteratura"
+        data_val  = safe_date(r.get("data"))
+        try:
+            if table_name == "matrici_additivi_ingredienti":
+                tipo = safe(r.get("tipo_interazione"))
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "INSERT INTO matrici_additivi_ingredienti "
+                        "(additivo_id,ingrediente_id,tipo_interazione,punteggio,note,fonte,stato,data) "
+                        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s) "
+                        "ON DUPLICATE KEY UPDATE "
+                        "tipo_interazione=VALUES(tipo_interazione),"
+                        "punteggio=VALUES(punteggio),note=VALUES(note),fonte=VALUES(fonte)",
+                        [a, safe_int(b), tipo, punteggio, note, fonte, stato, data_val]
+                    )
+            else:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        f"INSERT INTO {table_name} "
+                        f"({pk_a},{pk_b},punteggio,note,fonte,stato,data) "
+                        "VALUES (%s,%s,%s,%s,%s,%s,%s) "
+                        "ON DUPLICATE KEY UPDATE "
+                        "punteggio=VALUES(punteggio),note=VALUES(note),fonte=VALUES(fonte)",
+                        [safe_int(a), safe_int(b), punteggio, note, fonte, stato, data_val]
+                    )
+            count += 1
+        except Exception as e:
+            log(f"  Errore riga {a},{b}: {e}")
     conn.commit()
-    log(f"  {tab_name} sincronizzate: {count} coppie")
+    log(f"  {tab_name}: {count} coppie")
 
 # ─── SYNC PROVE DOE ───────────────────────────────────────────
 def sync_prove_doe(sh, conn):
@@ -313,74 +313,72 @@ def sync_prove_doe(sh, conn):
     for r in rows:
         if not r.get("id"):
             continue
-        # Mappa i campi principali
         data = {"id": safe(r.get("id"))}
-        for campo in ["blend_id","operatore","luogo","tipo_impastatrice",
-                      "note_impasto","note_sensoriali","note_generali",
-                      "esito_complessivo","foto_url"]:
-            v = safe(r.get(campo))
-            if v: data[campo] = v
-        for campo in ["numero_prova","friction_factor","t_cottura_fase1_c",
-                      "durata_fase1_min","t_cottura_fase2_c","durata_fase2_min",
-                      "t_cottura_fase3_c","durata_fase3_min","sapore_1_9",
-                      "texture_1_9","croccantezza_1_9","retrogusto_1_9",
-                      "soddisfazione_1_9","gommosita_1_9","durata_puntatura_min",
-                      "durata_apretto_min"]:
-            v = safe_int(r.get(campo))
-            if v is not None: data[campo] = v
-        for campo in ["t_ambiente_c","ur_ambiente_pct","t_farine_c",
-                      "t_acqua_calcolata_c","t_acqua_usata_c","t_impasto_uscita_c",
-                      "ph_impasto","idratazione_pct","ceci_pct","quinoa_pct",
-                      "psyllium_pct","lm_pct","t_puntatura_c","ur_puntatura_pct",
-                      "volume_aumento_puntatura_pct","t_apretto_c","ur_apretto_pct",
-                      "volume_aumento_apretto_pct","t_interna_fine_c",
-                      "volume_specifico_ml_g","durezza_mollica_n","colore_crosta_l",
-                      "colore_crosta_a","colore_crosta_b","ph_mollica","aw_prodotto",
-                      "umidita_pct"]:
-            v = safe_float(r.get(campo))
-            if v is not None: data[campo] = v
+        for c in ["blend_id","operatore","luogo","tipo_impastatrice",
+                  "note_impasto","note_sensoriali","note_generali",
+                  "esito_complessivo","foto_url"]:
+            v = safe(r.get(c))
+            if v: data[c] = v
+        for c in ["numero_prova","friction_factor","sapore_1_9","texture_1_9",
+                  "croccantezza_1_9","retrogusto_1_9","soddisfazione_1_9",
+                  "gommosita_1_9","durata_puntatura_min","durata_apretto_min",
+                  "t_cottura_fase1_c","durata_fase1_min","t_cottura_fase2_c",
+                  "durata_fase2_min","t_cottura_fase3_c","durata_fase3_min"]:
+            v = safe_int(r.get(c))
+            if v is not None: data[c] = v
+        for c in ["t_ambiente_c","ur_ambiente_pct","t_farine_c",
+                  "t_acqua_calcolata_c","t_acqua_usata_c","t_impasto_uscita_c",
+                  "ph_impasto","idratazione_pct","ceci_pct","quinoa_pct",
+                  "psyllium_pct","lm_pct","t_puntatura_c","ur_puntatura_pct",
+                  "volume_aumento_puntatura_pct","t_apretto_c","ur_apretto_pct",
+                  "volume_aumento_apretto_pct","t_interna_fine_c",
+                  "volume_specifico_ml_g","durezza_mollica_n","colore_crosta_l",
+                  "colore_crosta_a","colore_crosta_b","ph_mollica",
+                  "aw_prodotto","umidita_pct"]:
+            v = safe_float(r.get(c))
+            if v is not None: data[c] = v
         d = safe_date(r.get("data"))
         if d: data["data"] = d
         upsert(conn, "prove_doe", data, "id")
         count += 1
     conn.commit()
-    log(f"  Prove DoE sincronizzate: {count}")
+    log(f"  Prove DoE: {count}")
 
 # ─── GENERA JSON STATICI ──────────────────────────────────────
 def genera_json_statici(conn):
     log("Generazione JSON statici...")
     os.makedirs(f"{DIST_DIR}/data", exist_ok=True)
 
-    tabelle = [
-        ("ingredienti", "ingredienti.json",
+    queries = [
+        ("ingredienti.json",
          "SELECT * FROM ingredienti ORDER BY famiglia, nome"),
-        ("additivi", "additivi.json",
+        ("additivi.json",
          "SELECT * FROM additivi ORDER BY categoria, id"),
-        ("blend", "blend.json",
+        ("blend.json",
          "SELECT * FROM blend ORDER BY id"),
-        ("matrici_reol", "matrici_reol.json",
+        ("matrici_reol.json",
          "SELECT * FROM matrici_reol ORDER BY punteggio DESC"),
-        ("matrici_chim", "matrici_chim.json",
+        ("matrici_chim.json",
          "SELECT * FROM matrici_chim ORDER BY punteggio DESC"),
-        ("matrici_sens", "matrici_sens.json",
+        ("matrici_sens.json",
          "SELECT * FROM matrici_sens ORDER BY punteggio DESC"),
-        ("matrici_additivi_ingredienti", "matrici_additivi.json",
+        ("matrici_additivi.json",
          "SELECT * FROM matrici_additivi_ingredienti ORDER BY punteggio DESC"),
-        ("ingredienti_ig_per_stato", "ig_per_stato.json",
+        ("ig_per_stato.json",
          "SELECT * FROM ingredienti_ig_per_stato ORDER BY ingrediente_id"),
-        ("scheda_operativa", "scheda_operativa.json",
+        ("scheda_operativa.json",
          "SELECT * FROM scheda_operativa ORDER BY blend_id, busta"),
-        ("prove_doe", "prove_doe.json",
-         "SELECT id,blend_id,numero_prova,data,operatore,ceci_pct,idratazione_pct,"
-         "t_apretto_c,t_interna_fine_c,aw_prodotto,sapore_1_9,soddisfazione_1_9,"
-         "esito_complessivo FROM prove_doe ORDER BY data DESC"),
+        ("prove_doe.json",
+         "SELECT id,blend_id,numero_prova,data,operatore,ceci_pct,"
+         "idratazione_pct,t_apretto_c,t_interna_fine_c,aw_prodotto,"
+         "sapore_1_9,soddisfazione_1_9,esito_complessivo "
+         "FROM prove_doe ORDER BY data DESC"),
     ]
 
-    for _, filename, query in tabelle:
+    for filename, query in queries:
         with conn.cursor() as cur:
             cur.execute(query)
             rows = cur.fetchall()
-        # Converti date in stringhe
         for row in rows:
             for k, v in row.items():
                 if isinstance(v, (date, datetime)):
@@ -390,7 +388,6 @@ def genera_json_statici(conn):
             json.dump(rows, f, ensure_ascii=False, default=str)
         log(f"  {filename}: {len(rows)} record")
 
-    # JSON indice con metadata
     meta = {
         "generato": datetime.now().isoformat(),
         "sheet_id": SHEET_ID,
@@ -406,24 +403,44 @@ def main():
     print(f"ZeroCereals KB Sync — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 50)
 
-    sh   = connect_sheet()
-    conn = connect_db()
-    log(f"Connesso a Sheet: {sh.title}")
-    log(f"Connesso a DB: {DB_CONFIG['db']}")
+    sh = connect_sheet()
+    log(f"Sheet: {sh.title}")
 
-    sync_ingredienti(sh, conn)
-    sync_ig_per_stato(sh, conn)
-    sync_additivi(sh, conn)
-    sync_blend(sh, conn)
-    sync_matrice(sh, conn, "Matrici_Reol", "matrici_reol", "id_a", "id_b")
-    sync_matrice(sh, conn, "Matrici_Chim", "matrici_chim", "id_a", "id_b")
-    sync_matrice(sh, conn, "Matrici_Sens", "matrici_sens", "id_a", "id_b")
-    sync_matrice(sh, conn, "Matrici_Additivi_x_Ingredienti",
-                 "matrici_additivi_ingredienti", "additivo_id", "ingrediente_id")
-    sync_prove_doe(sh, conn)
-    genera_json_statici(conn)
+    tunnel = SSHTunnelForwarder(
+        (SSH_HOST, 22),
+        ssh_username=SSH_USER,
+        ssh_pkey=SSH_KEY,
+        remote_bind_address=("127.0.0.1", 3306),
+        local_bind_address=("127.0.0.1", 3307),
+    )
+    tunnel.start()
+    log(f"Tunnel SSH aperto: {SSH_HOST} → 127.0.0.1:{tunnel.local_bind_port}")
 
-    conn.close()
+    try:
+        conn = connect_db_via_tunnel(tunnel)
+        log(f"DB connesso: {DB_NAME}")
+
+        sync_ingredienti(sh, conn)
+        sync_ig_per_stato(sh, conn)
+        sync_additivi(sh, conn)
+        sync_blend(sh, conn)
+        sync_matrice(sh, conn, "Matrici_Reol",
+                     "matrici_reol", "id_a", "id_b")
+        sync_matrice(sh, conn, "Matrici_Chim",
+                     "matrici_chim", "id_a", "id_b")
+        sync_matrice(sh, conn, "Matrici_Sens",
+                     "matrici_sens", "id_a", "id_b")
+        sync_matrice(sh, conn, "Matrici_Additivi_x_Ingredienti",
+                     "matrici_additivi_ingredienti",
+                     "additivo_id", "ingrediente_id")
+        sync_prove_doe(sh, conn)
+        genera_json_statici(conn)
+        conn.close()
+
+    finally:
+        tunnel.stop()
+        log("Tunnel SSH chiuso")
+
     print("=" * 50)
     print("Sync completata.")
     print("=" * 50)
