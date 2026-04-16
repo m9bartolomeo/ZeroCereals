@@ -10,13 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      DB_HOST: 127.0.0.1
-      DB_PORT: 3307
-      DB_NAME: ${{ secrets.DB_NAME }}
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_PASS: ${{ secrets.DB_PASS }}
-      SSH_HOST: ${{ secrets.SSH_HOST }}
-      SSH_USER: ${{ secrets.SSH_USER }}
       SHEET_ID: 1LGNkmM3K-iVwqJ5sRYe0zeIQZEQBZTfTCyVIf4BaZfQ
 
     steps:
@@ -29,19 +22,12 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install gspread google-auth pymysql cryptography sshtunnel
+        run: pip install gspread google-auth
 
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/zc_actions
-          chmod 600 ~/.ssh/zc_actions
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Run sync
+      - name: Export Sheet to JSON
         run: python scripts/sync_kb.py
 
-      - name: Deploy to Netsons via FTP
+      - name: Deploy JSON + app to Netsons via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -52,3 +38,16 @@ jobs:
           exclude: |
             **/.git*
             **/.git*/**
+
+      - name: Trigger import JSON → MySQL
+        run: |
+          curl -s -X POST \
+            "https://rd.metodonove.com/api.php?action=import" \
+            -H "X-Import-Key: ${{ secrets.IMPORT_KEY }}" \
+            | python3 -c "
+          import sys, json
+          r = json.load(sys.stdin)
+          print('Import result:', json.dumps(r, indent=2))
+          if r.get('status') != 'ok':
+              sys.exit(1)
+          "
