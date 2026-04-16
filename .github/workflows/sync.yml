@@ -35,6 +35,9 @@ jobs:
           password: ${{ secrets.FTP_PASS }}
           local-dir: ./dist/
           server-dir: /
+          protocol: ftps
+          port: 21
+          security: loose
           exclude: |
             **/.git*
             **/.git*/**
