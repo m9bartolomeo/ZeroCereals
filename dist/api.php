@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // ─── CONFIG ───────────────────────────────────────────────────
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'dhfmzeyo_zerocereals_kb');
-define('DB_USER', 'dhfmzeyo_zcaction');
+define('DB_USER', 'dhfmzeyo_zcactions');
 define('DB_PASS', 'ZcActions2026kb');  // sostituire con password reale
 define('IMPORT_KEY', '831807adc8a88be29409ec9a5111dd792a55cb35268cb8820c4f7da99fbdc9e5');
 define('DATA_DIR', __DIR__ . '/data/');
