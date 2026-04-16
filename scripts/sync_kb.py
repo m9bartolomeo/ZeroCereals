@@ -1,6 +1,6 @@
 """
-sync_kb.py v3 — Legge Google Sheet → genera JSON statici
-Niente MySQL diretto: l'import lo fa api.php su Netsons dopo il deploy FTP.
+sync_kb.py v4 — Legge Google Sheet → genera JSON statici
+Nomenclature v2: fonte, data_aggiornamento, stato normalizzato
 """
 
 import os
@@ -27,7 +27,6 @@ def connect_sheet():
     return gc.open_by_key(SHEET_ID)
 
 def export_tab(sh, tab_name, filename):
-    """Legge un tab del Sheet e lo salva come JSON."""
     try:
         ws   = sh.worksheet(tab_name)
         rows = ws.get_all_records()
@@ -45,7 +44,7 @@ def export_tab(sh, tab_name, filename):
 
 def main():
     print("=" * 50)
-    print(f"ZeroCereals KB Sync v3 — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"ZeroCereals KB Sync v4 — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 50)
 
     os.makedirs(f"{DIST_DIR}/data", exist_ok=True)
@@ -53,7 +52,6 @@ def main():
     sh = connect_sheet()
     log(f"Sheet connesso: {sh.title}")
 
-    # Esporta tutti i tab come JSON statici
     tabs = [
         ("Ingredienti",                    "ingredienti.json"),
         ("Additivi",                       "additivi.json"),
@@ -71,19 +69,18 @@ def main():
     for tab_name, filename in tabs:
         totale += export_tab(sh, tab_name, filename)
 
-    # Metadati
     meta = {
-        "generato":  datetime.now().isoformat(),
-        "sheet_id":  SHEET_ID,
-        "versione":  "1.0",
-        "record_totali": totale,
+        "generato":       datetime.now().isoformat(),
+        "sheet_id":       SHEET_ID,
+        "versione":       "2.0",
+        "record_totali":  totale,
     }
     with open(f"{DIST_DIR}/data/meta.json", "w") as f:
         json.dump(meta, f)
-    log(f"meta.json generato — {totale} record totali")
+    log(f"meta.json — {totale} record totali")
 
     print("=" * 50)
-    print("Export JSON completato.")
+    print("Export completato.")
     print("=" * 50)
 
 if __name__ == "__main__":
