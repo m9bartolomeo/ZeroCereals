@@ -1,16 +1,23 @@
-name: Sync KB
+name: Sync KB + Deploy
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # ogni notte alle 02:00 UTC
-  workflow_dispatch:       # avvio manuale da browser
+    - cron: '0 2 * * *'
+  workflow_dispatch:
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    env:
+      GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASS: ${{ secrets.DB_PASS }}
+      SHEET_ID: 1LGNkmM3K-iVwqJ5sRYe0zeIQZEQBZTfTCyVIf4BaZfQ
 
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -19,28 +26,19 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install gspread google-auth pymysql pandas
-
-      - name: Write Google credentials
-        env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-        run: |
-          echo "$GOOGLE_SERVICE_ACCOUNT_JSON" > /tmp/credentials.json
+        run: pip install gspread google-auth pymysql cryptography
 
       - name: Run sync
-        env:
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASS: ${{ secrets.DB_PASS }}
-          GOOGLE_CREDENTIALS_PATH: /tmp/credentials.json
-          SHEET_ID: 1LGNkmM3K-iVwqJ5sRYe0zeIQZEQBZTfTCyVIf4BaZfQ
         run: python scripts/sync_kb.py
 
-      - name: Commit updated JSON
-        run: |
-          git config user.name "ZeroCereals Bot"
-          git config user.email "bot@metodonove.com"
-          git add public/data/*.json
-          git diff --cached --quiet || git commit -m "sync: KB aggiornata $(date -u '+%Y-%m-%d %H:%M') UTC"
-          git push
+      - name: Deploy to Netsons via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: ./dist/
+          server-dir: /
+          exclude: |
+            **/.git*
+            **/.git*/**
