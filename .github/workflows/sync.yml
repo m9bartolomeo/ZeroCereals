@@ -47,32 +47,4 @@ jobs:
           HTTP_USER: ${{ secrets.HTTP_USER }}
           HTTP_PASS: ${{ secrets.HTTP_PASS }}
           IMPORT_KEY: ${{ secrets.IMPORT_KEY }}
-        run: |
-          python3 << 'PYEOF'
-          import urllib.request, urllib.error, json, base64, sys, os
-          url  = 'https://rd.metodonove.com/api.php?action=import'
-          user = os.environ['HTTP_USER']
-          pwd  = os.environ['HTTP_PASS']
-          key  = os.environ['IMPORT_KEY']
-          creds = base64.b64encode(f'{user}:{pwd}'.encode()).decode()
-          req = urllib.request.Request(url, method='POST')
-          req.add_header('X-Import-Key', key)
-          req.add_header('Authorization', f'Basic {creds}')
-          try:
-              with urllib.request.urlopen(req, timeout=30) as r:
-                  body = r.read().decode()
-                  print('Response:', body[:500])
-                  data = json.loads(body)
-                  print('Import result:', json.dumps(data, indent=2))
-                  sys.exit(0 if data.get('status') == 'ok' else 1)
-          except urllib.error.HTTPError as e:
-              body = e.read().decode()
-              print('HTTP', e.code, ':', body[:500])
-              sys.exit(1)
-          except Exception as e:
-              print('Error:', type(e).__name__, e)
-              sys.exit(1)
-          PYEOF
-              print('Error:', e)
-              sys.exit(1)
-          PYEOF
+        run: python3 scripts/trigger_import.py
