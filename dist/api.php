@@ -319,6 +319,46 @@ switch ($action) {
         ok(['prova'=>$row]);
         break;
 
+
+    // ── LOG ACCESSO ───────────────────────────────────────────
+    case 'log_access':
+        $pdo    = get_db();
+        $utente = $_SERVER['PHP_AUTH_USER'] ?? 'sconosciuto';
+        $ip     = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+        $ua     = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 300);
+        $modulo = substr($_GET['modulo'] ?? 'app', 0, 40);
+        $azione = substr($_GET['azione'] ?? 'caricamento', 0, 40);
+        $pdo->prepare(
+            "INSERT INTO access_log (utente,ip,user_agent,modulo,azione)
+             VALUES (?,?,?,?,?)"
+        )->execute([$utente, $ip, $ua, $modulo, $azione]);
+        ok(['logged'=>true,'utente'=>$utente]);
+        break;
+
+    // ── LEGGI LOG ACCESSI ─────────────────────────────────────
+    case 'get_log':
+        $pdo    = get_db();
+        $utente = $_SERVER['PHP_AUTH_USER'] ?? '';
+        if ($utente !== 'bartolomeo') err('Solo bartolomeo può vedere i log', 403);
+        $limit  = min((int)($_GET['limit'] ?? 100), 500);
+        $filtro = $_GET['utente'] ?? null;
+        $where  = $filtro ? "WHERE utente=?" : "";
+        $args   = $filtro ? [$filtro] : [];
+        $stmt   = $pdo->prepare(
+            "SELECT * FROM access_log $where
+             ORDER BY timestamp DESC LIMIT $limit"
+        );
+        $stmt->execute($args);
+        ok(['log'=>$stmt->fetchAll(),'count'=>$stmt->rowCount()]);
+        break;
+
     default:
         err("Azione non riconosciuta: '$action'",400);
 }
+// ── AGGIORNAMENTO: aggiungi dopo il case 'health' ──────────────
+// case 'log_access':
+//   Registra accesso. Chiamato dal React al caricamento.
+//   GET ?action=log_access&modulo=X
+// case 'get_log':
+//   Legge log accessi. Solo per bartolomeo.
+//   GET ?action=get_log&limit=100
