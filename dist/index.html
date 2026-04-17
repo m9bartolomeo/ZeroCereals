@@ -3,723 +3,1438 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CerealFree R&D</title>
+<title>ZeroCereals R&D</title>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
-:root{
-  --g9:#0d2b1a;--g8:#1a5c38;--g7:#2e7d50;--g6:#3d9e67;--g2:#a8d5b8;--g1:#d6efe0;--g0:#eff8f2;
-  --a8:#92400e;--a6:#b45309;--a1:#fef3c7;--a0:#fffbeb;
-  --r8:#991b1b;--r1:#fee2e2;
-  --b8:#1e40af;--b1:#dbeafe;
-  --n9:#111827;--n7:#374151;--n5:#6b7280;--n3:#d1d5db;--n1:#f3f4f6;--n0:#f9fafb;
+:root {
+  --g9:#0d2b1a;--g8:#1a5c38;--g7:#2e7d50;--g6:#3d9e67;--g4:#6bc48a;--g2:#a8d5b8;--g1:#d6efe0;--g0:#eff8f2;
+  --a8:#92400e;--a6:#b45309;--a4:#d97706;--a1:#fef3c7;--a0:#fffbeb;
+  --r8:#991b1b;--r6:#dc2626;--r1:#fee2e2;--r0:#fff5f5;
+  --b8:#1e40af;--b6:#2563eb;--b1:#dbeafe;--b0:#eff6ff;
+  --n9:#111827;--n8:#1f2937;--n7:#374151;--n6:#4b5563;--n5:#6b7280;--n4:#9ca3af;--n3:#d1d5db;--n2:#e5e7eb;--n1:#f3f4f6;--n0:#f9fafb;
   --wh:#ffffff;
-  --sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  --sans:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+  --radius:8px;--radius-lg:12px;--radius-xl:16px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--sans);background:var(--n0);color:var(--n9);min-height:100vh}
-button{font-family:var(--sans);cursor:pointer}
-input,select,textarea{font-family:var(--sans)}
+body{font-family:var(--sans);background:var(--n0);color:var(--n9);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+button{font-family:var(--sans);cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:var(--sans);font-size:14px}
 
-/* NAV */
-.nav{background:var(--g9);padding:10px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
-.nav-brand{color:var(--g2);font-weight:600;font-size:14px;letter-spacing:.04em;white-space:nowrap;flex-shrink:0}
-.nav-brand span{color:var(--g6)}
-.nav-tabs{display:flex;gap:2px;flex-wrap:wrap;flex:1}
-.nt{padding:6px 13px;color:var(--g2);background:transparent;border:none;font-size:12px;font-weight:500;border-radius:6px;white-space:nowrap;transition:all .15s;letter-spacing:.02em}
-.nt:hover{background:rgba(255,255,255,.1);color:#fff}
-.nt.on{background:var(--g7);color:#fff}
-.nav-st{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--g2);flex-shrink:0;font-family:var(--mono)}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--g6);flex-shrink:0}
-.dot.loading{background:#fbbf24;animation:blink 1s infinite}
-.dot.error{background:#ef4444}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+/* ── LAYOUT ── */
+.app{display:flex;min-height:100vh;flex-direction:column}
+.topbar{background:var(--g9);color:var(--wh);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;flex-shrink:0}
+.topbar-brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;letter-spacing:-.2px}
+.topbar-dot{width:8px;height:8px;background:var(--g4);border-radius:50%}
+.topbar-meta{font-size:11px;color:var(--g2);font-family:var(--mono)}
+.main{display:flex;flex:1}
+.sidebar{width:200px;background:var(--wh);border-right:1px solid var(--n2);padding:12px 0;flex-shrink:0;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;font-size:13px;font-weight:400;color:var(--n6);transition:all .15s;border-left:2px solid transparent;text-decoration:none}
+.nav-item:hover{background:var(--g0);color:var(--g8)}
+.nav-item.active{background:var(--g0);color:var(--g8);font-weight:500;border-left-color:var(--g6)}
+.nav-icon{font-size:15px;width:18px;text-align:center}
+.nav-section{padding:16px 16px 4px;font-size:10px;font-weight:600;color:var(--n4);text-transform:uppercase;letter-spacing:.08em}
+.content{flex:1;padding:24px;overflow-x:hidden;min-width:0}
 
-/* LAYOUT */
-.page{max-width:1380px;margin:0 auto;padding:1.5rem}
-.ph{margin-bottom:1.25rem}
-.pt{font-size:20px;font-weight:600;color:var(--n9)}
-.ps{font-size:12px;color:var(--n5);margin-top:3px}
+/* ── CARDS ── */
+.card{background:var(--wh);border:1px solid var(--n2);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow)}
+.card+.card{margin-top:16px}
+.card-title{font-size:13px;font-weight:600;color:var(--n7);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-title-icon{font-size:16px}
 
-/* CARD */
-.card{background:var(--wh);border:1px solid var(--n3);border-radius:12px;overflow:hidden}
-.ch{padding:14px 18px;border-bottom:1px solid var(--n1);display:flex;align-items:center;justify-content:space-between}
-.ct{font-size:13px;font-weight:600}
-.cb{padding:14px 18px}
+/* ── GRID ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 
-/* TAGS */
-.tag{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
-.t-teorico{background:var(--b1);color:var(--b8)}
-.t-sperimentale{background:var(--g1);color:var(--g8)}
-.t-legume{background:var(--g0);color:var(--g8);border:1px solid var(--g1)}
-.t-pseudo{background:#f3e8ff;color:#6b21a8;border:1px solid #d8b4fe}
-.t-amido{background:var(--a0);color:var(--a8);border:1px solid #fcd34d}
-.t-frutta{background:#fff1f2;color:#9f1239;border:1px solid #fecdd3}
-.t-seme{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
-.t-legante{background:#fdf4ff;color:#7e22ce;border:1px solid #e9d5ff}
-.t-alga{background:var(--b1);color:var(--b8);border:1px solid #bfdbfe}
-.t-fungo{background:var(--n1);color:var(--n7);border:1px solid var(--n3)}
-.t-radice{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
+/* ── STAT CARDS ── */
+.stat{background:var(--n0);border-radius:var(--radius);padding:14px 16px}
+.stat-label{font-size:11px;color:var(--n5);margin-bottom:4px;font-family:var(--mono)}
+.stat-value{font-size:22px;font-weight:600;color:var(--n9);line-height:1}
+.stat-sub{font-size:11px;color:var(--n5);margin-top:3px}
 
-/* SEARCH */
-.sbar{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
-.sinput{flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--n3);border-radius:8px;font-size:13px;color:var(--n9);background:var(--wh)}
-.sinput:focus{outline:none;border-color:var(--g6)}
-.fbtn{padding:6px 13px;border:1px solid var(--n3);border-radius:8px;font-size:11px;font-weight:500;background:var(--wh);color:var(--n7);transition:all .15s}
-.fbtn:hover,.fbtn.on{background:var(--g8);color:var(--wh);border-color:var(--g8)}
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;font-family:var(--mono)}
+.badge-green{background:var(--g1);color:var(--g8)}
+.badge-amber{background:var(--a1);color:var(--a8)}
+.badge-red{background:var(--r1);color:var(--r8)}
+.badge-blue{background:var(--b1);color:var(--b8)}
+.badge-gray{background:var(--n2);color:var(--n6)}
 
-/* INGREDIENT GRID */
-.igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
-.icard{background:var(--wh);border:1px solid var(--n3);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .15s}
-.icard:hover{border-color:var(--g6);box-shadow:0 0 0 3px var(--g0)}
-.iname{font-size:13px;font-weight:600;color:var(--n9);margin-bottom:1px}
-.ilatin{font-size:10px;color:var(--n5);font-style:italic;margin-bottom:6px}
-.ibars{display:flex;flex-direction:column;gap:3px;margin-top:6px}
-.br{display:flex;align-items:center;gap:5px}
-.bl{font-size:9px;color:var(--n5);width:32px;flex-shrink:0;font-family:var(--mono)}
-.bt{flex:1;height:4px;background:var(--n1);border-radius:2px;overflow:hidden}
-.bf{height:100%;border-radius:2px}
-.bp{background:var(--g7)}.ba{background:var(--a6)}.bl2{background:#dc2626}
-.ifoot{display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--n5);font-family:var(--mono)}
-.att{font-size:10px;font-weight:500;color:var(--g7);background:var(--g0);border:1px solid var(--g1);border-radius:10px;padding:1px 6px;display:inline-block;margin-top:3px}
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;transition:all .15s;cursor:pointer;border:1px solid transparent}
+.btn-primary{background:var(--g7);color:var(--wh);border-color:var(--g7)}
+.btn-primary:hover{background:var(--g8)}
+.btn-secondary{background:var(--wh);color:var(--n7);border-color:var(--n3)}
+.btn-secondary:hover{background:var(--n1);border-color:var(--n4)}
+.btn-danger{background:var(--r1);color:var(--r8);border-color:var(--r1)}
+.btn-sm{padding:4px 10px;font-size:12px}
 
-/* DETAIL PANEL */
-.dp{position:fixed;top:0;right:0;width:400px;height:100vh;background:var(--wh);border-left:1px solid var(--n3);overflow-y:auto;z-index:200;transform:translateX(100%);transition:transform .25s ease;padding-top:10px}
-.dp.open{transform:translateX(0)}
-.dclose{position:sticky;top:10px;left:calc(100% - 44px);background:var(--n1);border:none;border-radius:6px;width:28px;height:28px;font-size:16px;color:var(--n5);display:flex;align-items:center;justify-content:center;margin:0 12px 0 auto}
-.dclose:hover{background:var(--n3)}
-.dhead{padding:6px 18px 0}
-.dname{font-size:17px;font-weight:700;color:var(--n9)}
-.dlatin{font-size:11px;color:var(--n5);font-style:italic;margin:2px 0 8px}
-.dsec{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--n5);margin:14px 18px 6px}
-.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:0 18px}
-.dstat{background:var(--n0);border-radius:8px;padding:9px 11px}
-.dstat-l{font-size:10px;color:var(--n5);font-family:var(--mono)}
-.dstat-v{font-size:14px;font-weight:600;color:var(--n9);margin-top:1px}
-.dnote{margin:0 18px;background:var(--g0);border-radius:8px;padding:11px 13px;font-size:12px;color:var(--n7);line-height:1.6}
-.datt{margin:0 18px;background:var(--a0);border-left:3px solid var(--a6);border-radius:0 8px 8px 0;padding:9px 13px;font-size:12px;color:var(--a8);line-height:1.6}
-.duses{padding:0 18px 20px;display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
-.uchip{font-size:11px;padding:3px 10px;border-radius:12px;background:var(--n1);color:var(--n7);border:1px solid var(--n3)}
+/* ── INPUTS ── */
+.input{width:100%;padding:7px 10px;border:1px solid var(--n3);border-radius:var(--radius);font-size:13px;color:var(--n9);background:var(--wh);transition:border-color .15s;outline:none}
+.input:focus{border-color:var(--g6)}
+.input-group{margin-bottom:12px}
+.input-label{font-size:12px;font-weight:500;color:var(--n7);margin-bottom:4px;display:block}
+.input-hint{font-size:11px;color:var(--n5);margin-top:3px}
+select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
 
-/* ADDITIVI */
-.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px}
-.acard{background:var(--wh);border:1px solid var(--n3);border-radius:10px;padding:13px 15px}
-.aname{font-size:13px;font-weight:600;color:var(--n9);margin-bottom:3px}
-.acat{font-size:11px;margin-bottom:6px}
-.cat-antiossidante{color:var(--g7)}.cat-umettante{color:var(--a6)}.cat-conservante{color:var(--r8)}.cat-miglioratore{color:var(--b8)}
-.adose{font-family:var(--mono);font-size:11px;color:var(--n5);margin-bottom:5px}
-.anote{font-size:11px;color:var(--n7);line-height:1.5}
-.aetich{font-size:11px;color:var(--g7);font-style:italic;margin-top:5px}
-.abusta{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:var(--n1);color:var(--n5);margin-top:3px}
+/* ── TABLES ── */
+.table-wrap{overflow-x:auto;margin:-4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 12px;font-size:11px;font-weight:600;color:var(--n5);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--n2);background:var(--n0);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--n2);color:var(--n7);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--g0)}
+.td-mono{font-family:var(--mono);font-size:12px}
 
-/* BLEND */
-.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
-.bcard{background:var(--wh);border:1px solid var(--n3);border-radius:12px;padding:15px;cursor:pointer;transition:all .15s}
-.bcard:hover{border-color:var(--g6)}
-.bname{font-size:14px;font-weight:600;color:var(--n9);margin-bottom:2px}
-.bcat{font-size:11px;color:var(--n5);margin-bottom:9px}
-.bscores{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:9px}
-.bsc{text-align:center;background:var(--n0);border-radius:6px;padding:6px 3px}
-.bscv{font-size:16px;font-weight:700}
-.bscl{font-size:9px;color:var(--n5);margin-top:1px}
-.bmeta{display:flex;gap:6px;font-size:10px;color:var(--n5);font-family:var(--mono)}
-.bpills{display:flex;flex-wrap:wrap;gap:3px;margin-top:7px}
-.bpill{font-size:10px;padding:2px 7px;border-radius:8px;background:var(--g0);color:var(--g8);border:1px solid var(--g1)}
+/* ── SEARCH ── */
+.search-wrap{position:relative;margin-bottom:16px}
+.search-input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--n3);border-radius:var(--radius);font-size:13px;outline:none;transition:border-color .15s}
+.search-input:focus{border-color:var(--g6)}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--n5);font-size:14px;pointer-events:none}
 
-/* MATRICI */
-.mwrap{overflow-x:auto}
-.mx{border-collapse:collapse;font-size:11px}
-.mx th{font-size:9px;font-weight:500;color:var(--n5);padding:5px 3px;text-align:center;white-space:nowrap;font-family:var(--mono)}
-.mx th.rh{text-align:right;padding-right:8px;font-family:var(--sans);font-size:10px}
-.mx td{width:32px;height:32px;text-align:center;cursor:pointer;font-size:11px;font-weight:600;border:1px solid var(--n1);transition:opacity .1s}
-.mx td:hover{opacity:.7}
-.s5{background:#065f46;color:#fff}.s4{background:#d1fae5;color:#065f46}
-.s3{background:var(--n1);color:var(--n5)}.s2{background:#fef3c7;color:#92400e}
-.s1{background:#fee2e2;color:#991b1b}.s0{background:var(--n0);color:var(--n3)}
-.mleg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
-.mleg-i{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--n5)}
-.mleg-d{width:11px;height:11px;border-radius:3px}
-.mdet{margin-top:10px;padding:12px 13px;background:var(--n0);border-radius:8px;font-size:12px;color:var(--n7);line-height:1.6;min-height:40px}
-.itabs{display:flex;gap:4px;margin-bottom:14px}
-.itab{padding:6px 14px;border:1px solid var(--n3);border-radius:8px;font-size:12px;font-weight:500;background:var(--wh);color:var(--n7);transition:all .15s}
-.itab.on{background:var(--g7);color:#fff;border-color:var(--g7)}
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--n2);margin-bottom:20px}
+.tab{padding:8px 14px;font-size:13px;font-weight:400;color:var(--n5);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab:hover{color:var(--n7)}
+.tab.active{color:var(--g7);border-bottom-color:var(--g6);font-weight:500}
 
-/* DOE */
-.dgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
-.doecard{background:var(--wh);border:1px solid var(--n3);border-radius:12px;overflow:hidden}
-.doehead{padding:11px 15px;background:var(--g9);color:var(--wh);display:flex;align-items:center;justify-content:space-between}
-.doeid{font-family:var(--mono);font-size:13px;font-weight:500}
-.doest{font-size:10px;padding:2px 8px;border-radius:10px}
-.dst-v{background:rgba(255,255,255,.15);color:rgba(255,255,255,.8)}
-.dst-c{background:var(--g6);color:#fff}
-.doebody{padding:13px 15px}
-.dparams{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:8px}
-.dparam{background:var(--n0);border-radius:6px;padding:7px 9px}
-.dparam-l{font-size:9px;color:var(--n5);font-family:var(--mono)}
-.dparam-v{font-size:14px;font-weight:600;color:var(--n9)}
-.dfixed{font-size:10px;color:var(--n5);font-family:var(--mono)}
-.btncomp{width:100%;margin-top:9px;padding:8px;border:1px solid var(--g7);border-radius:8px;background:transparent;color:var(--g7);font-size:12px;font-weight:500;transition:all .15s}
-.btncomp:hover{background:var(--g7);color:#fff}
-.btncomp.done{border-color:var(--n3);color:var(--n5);background:var(--n0);cursor:default}
+/* ── ALERTS ── */
+.alert{padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px}
+.alert-red{background:var(--r0);border:1px solid var(--r1);color:var(--r8)}
+.alert-amber{background:var(--a0);border:1px solid var(--a1);color:var(--a8)}
+.alert-green{background:var(--g0);border:1px solid var(--g1);color:var(--g8)}
 
-/* MODAL */
-.mover{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto}
-.modal{background:var(--wh);border-radius:14px;width:100%;max-width:660px}
-.mhead{padding:16px 20px 12px;border-bottom:1px solid var(--n1);display:flex;align-items:center;justify-content:space-between}
-.mtitle{font-size:15px;font-weight:600;color:var(--n9)}
-.mclose{background:var(--n1);border:none;border-radius:6px;width:28px;height:28px;font-size:16px;color:var(--n5)}
-.mbody{padding:16px 20px;max-height:72vh;overflow-y:auto}
-.msec{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--n5);margin:14px 0 7px}
-.msec:first-child{margin-top:0}
-.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.ff{display:flex;flex-direction:column;gap:3px}
-.ff.full{grid-column:1/-1}
-.flbl{font-size:10px;font-weight:500;color:var(--n7);font-family:var(--mono)}
-.finput{padding:7px 10px;border:1px solid var(--n3);border-radius:7px;font-size:13px;color:var(--n9);background:var(--wh)}
-.finput:focus{outline:none;border-color:var(--g6)}
-.mfoot{padding:12px 20px;border-top:1px solid var(--n1);display:flex;justify-content:flex-end;gap:8px}
-.bcancel{padding:8px 16px;border:1px solid var(--n3);border-radius:8px;background:var(--wh);font-size:13px;color:var(--n7)}
-.bsave{padding:8px 18px;border:none;border-radius:8px;background:var(--g7);color:#fff;font-size:13px;font-weight:500}
-.bsave:hover{background:var(--g8)}.bsave:disabled{opacity:.5;cursor:not-allowed}
-.balert{padding:9px 20px;border:none;border-radius:8px;background:var(--g7);color:#fff;font-size:13px;font-weight:500;width:100%;margin-top:8px}
-.balert:hover{background:var(--g8)}
+/* ── HEATMAP ── */
+.heatmap-cell{width:32px;height:32px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;cursor:pointer;transition:transform .1s}
+.heatmap-cell:hover{transform:scale(1.1)}
+.hm-0{background:var(--n2);color:var(--n5)}
+.hm-1{background:#fee2e2;color:#991b1b}
+.hm-2{background:#fed7aa;color:#92400e}
+.hm-3{background:#fef3c7;color:#92400e}
+.hm-4{background:#d6efe0;color:#1a5c38}
+.hm-5{background:#a8d5b8;color:#0d2b1a}
 
-/* CONFIG */
-.cfcard{background:var(--wh);border:1px solid var(--n3);border-radius:12px;padding:22px;max-width:580px}
-.cflbl{font-size:12px;font-weight:600;color:var(--n7);margin-bottom:5px}
-.cfinput{width:100%;padding:9px 11px;border:1px solid var(--n3);border-radius:8px;font-size:12px;font-family:var(--mono);color:var(--n9);background:var(--n0)}
-.cfinput:focus{outline:none;border-color:var(--g6);background:var(--wh)}
-.cfnote{font-size:11px;color:var(--n5);margin-top:5px;line-height:1.5}
-.cfok{margin-top:12px;padding:10px 13px;border-radius:8px;font-size:12px;background:var(--g0);color:var(--g8);border:1px solid var(--g1)}
-.cferr{margin-top:12px;padding:10px 13px;border-radius:8px;font-size:12px;background:var(--r1);color:var(--r8)}
-.bprimary{padding:9px 20px;border:none;border-radius:8px;background:var(--g7);color:#fff;font-size:13px;font-weight:500}
-.bprimary:hover{background:var(--g8)}
-.sep{border:none;border-top:1px solid var(--n1);margin:20px 0}
-
-/* UTIL */
-.empty{text-align:center;padding:3rem;color:var(--n5);font-size:13px}
-.spin{display:inline-block;width:18px;height:18px;border:2px solid var(--n3);border-top-color:var(--g6);border-radius:50%;animation:spin .7s linear infinite}
+/* ── LOADING ── */
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--n5);gap:10px;flex-direction:column}
+.spinner{width:28px;height:28px;border:3px solid var(--n2);border-top-color:var(--g6);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.info-box{background:var(--a0);border:1px solid #fcd34d;border-radius:10px;padding:11px 14px;font-size:12px;color:var(--a8);margin-bottom:1.25rem;line-height:1.5}
-.res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:7px}
-.res-s{background:var(--g0);border-radius:6px;padding:5px 7px;text-align:center}
-.res-v{font-size:13px;font-weight:600;color:var(--g7)}
-.res-l{font-size:9px;color:var(--n5)}
 
-@media(max-width:600px){
-  .page{padding:1rem}
-  .fgrid{grid-template-columns:1fr}
-  .dp{width:100%}
+/* ── BLEND BUILDER ── */
+.ing-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 8px;background:var(--g1);color:var(--g8);border-radius:20px;font-size:12px;margin:3px}
+.ing-pill-x{cursor:pointer;color:var(--g6);font-size:14px;line-height:1}
+.ing-pill-x:hover{color:var(--r6)}
+.dose-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--n2)}
+.dose-row:last-child{border-bottom:none}
+.dose-name{flex:1;font-size:13px;font-weight:500}
+.dose-fam{font-size:11px;color:var(--n5);font-family:var(--mono)}
+.dose-input{width:70px;text-align:right}
+.dose-unit{font-size:12px;color:var(--n5);width:20px}
+.ig-bar{height:6px;border-radius:3px;background:var(--n2);overflow:hidden;margin-top:3px}
+.ig-fill{height:100%;border-radius:3px;transition:width .3s}
+
+/* ── DOE FORM ── */
+.doe-section{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--n2)}
+.doe-section:last-child{border-bottom:none}
+.doe-section-title{font-size:12px;font-weight:600;color:var(--n6);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.doe-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.doe-ccp{background:var(--r0);border:1px solid var(--r1);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px}
+.doe-ccp-label{font-size:11px;font-weight:600;color:var(--r8);text-transform:uppercase;letter-spacing:.06em}
+.doe-ccp-value{font-size:18px;font-weight:600;color:var(--r8);font-family:var(--mono)}
+.doe-ccp-target{font-size:11px;color:var(--r6)}
+
+/* ── MARKETING ── */
+.mkt-card{border:1px solid var(--n2);border-radius:var(--radius-lg);padding:16px;transition:box-shadow .15s;cursor:pointer}
+.mkt-card:hover{box-shadow:var(--shadow-md)}
+.mkt-card.alto{border-top:3px solid var(--g6)}
+.mkt-card.medio{border-top:3px solid var(--a4)}
+.mkt-card.basso{border-top:3px solid var(--n4)}
+.claim-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--b0);color:var(--b8);border-radius:20px;font-size:11px;font-weight:500;margin:2px}
+
+/* ── MOBILE ── */
+.hamburger{display:none;flex-direction:column;gap:4px;cursor:pointer;padding:4px}
+.hamburger span{width:18px;height:2px;background:var(--wh);border-radius:1px}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:90}
+
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-200px;top:52px;height:calc(100vh - 52px);z-index:95;transition:left .25s;box-shadow:var(--shadow-md)}
+  .sidebar.open{left:0}
+  .sidebar-overlay.open{display:block}
+  .hamburger{display:flex}
+  .content{padding:16px}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+  .doe-grid{grid-template-columns:1fr}
+  .topbar-meta{display:none}
+}
+@media(max-width:480px){
+  .content{padding:12px}
+  .card{padding:14px}
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tab{white-space:nowrap}
 }
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const {useState,useEffect,useCallback,useRef} = React;
+const { useState, useEffect, useCallback, useMemo } = React;
 
-const PUB_ID = "2PACX-1vTeB7rz_IzbKB5fvCk7GarfSUSWUMYetXUbPsHs86-aoPCBUkTz9bKHvBzBHoKqoh6Ss4UU0z8mRled";
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtbdrFqm_0E1Wqq0ikT-sa_J9Dlh2Us9zhD4u9PQ-is1Z8ixI810xWKYpIKsUlJo0M1Q/exec";
-const LS_ID = "cf_pub_id", LS_SC = "cf_script", LS_DATA = "cf_data";
+const BASE = 'https://rd.metodonove.com';
+const API  = `${BASE}/api.php`;
+const DATA = `${BASE}/data`;
 
-function parseCSV(txt){
-  const lines = txt.trim().split("\n"); if(!lines.length) return [];
-  const hdrs = lines[0].split(",").map(h=>h.trim().replace(/^"|"$/g,""));
-  return lines.slice(1).map(line=>{
-    const vals=[]; let cur="",inQ=false;
-    for(const c of line){ if(c==='"'){inQ=!inQ}else if(c===','&&!inQ){vals.push(cur);cur=""}else cur+=c; }
-    vals.push(cur);
-    const obj={};
-    hdrs.forEach((h,i)=>obj[h]=(vals[i]||"").replace(/^"|"$/g,"").replace(/\r/g,"").trim());
-    return obj;
-  }).filter(r=>Object.values(r).some(v=>v));
+// ── DATA FETCHING ──────────────────────────────────────────────
+function useData() {
+  const [data, setData] = useState({
+    ingredienti: [], additivi: [], blend: [],
+    matrici_reol: [], matrici_chim: [], matrici_sens: [],
+    matrici_additivi: [], ig_per_stato: [], scheda_operativa: [],
+    prove_doe: [], meta: null,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError]   = useState(null);
+
+  useEffect(() => {
+    const files = ['ingredienti','additivi','blend','matrici_reol',
+      'matrici_chim','matrici_sens','matrici_additivi','ig_per_stato',
+      'scheda_operativa','prove_doe','meta'];
+    Promise.all(files.map(f =>
+      fetch(`${DATA}/${f}.json`).then(r => r.json()).catch(() => f === 'meta' ? {} : [])
+    )).then(results => {
+      const d = {};
+      files.forEach((f, i) => d[f] = results[i]);
+      setData(d);
+      setLoading(false);
+    }).catch(e => { setError(e.message); setLoading(false); });
+  }, []);
+
+  const refresh = useCallback(() => {
+    setLoading(true);
+    fetch(`${DATA}/meta.json`).then(r => r.json()).then(meta => {
+      setData(d => ({...d, meta}));
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  return { data, loading, error, refresh };
 }
 
-async function fetchTab(pubId, tab){
-  const scriptUrl = localStorage.getItem("cf_script") || SCRIPT_URL;
-  const url = scriptUrl + "?sheet=" + encodeURIComponent(tab);
-  const res = await fetch(url);
-  if(!res.ok) throw new Error("HTTP "+res.status);
-  const json = await res.json();
-  if(!json.ok) throw new Error(json.error || "Errore lettura: "+tab);
-  return json.data || [];
+// ── HELPERS ───────────────────────────────────────────────────
+const famColors = {
+  legume:'badge-green', pseudo:'badge-blue', amido:'badge-gray',
+  frutta:'badge-amber', seme:'badge-amber', legante:'badge-gray',
+  alga:'badge-blue', fungo:'badge-blue', radice:'badge-green',
+};
+const statoColors = {
+  verificato:'badge-green', stima:'badge-amber',
+  da_completare:'badge-red', sperimentale:'badge-blue',
+};
+const mktColors = { alto:'alto', medio:'medio', basso:'basso' };
+
+function Badge({ children, cls }) {
+  return <span className={`badge ${cls||'badge-gray'}`}>{children}</span>;
 }
 
-async function writeSheet(scriptUrl, payload){
-  const res = await fetch(scriptUrl,{method:"POST",body:JSON.stringify(payload)});
-  const d = await res.json();
-  if(!d.ok) throw new Error(d.error||"Errore scrittura");
-  return d;
+function Alert({ type='green', children }) {
+  return <div className={`alert alert-${type}`}>{children}</div>;
 }
 
-const FAM = {legume:"Legume",pseudo:"Pseudo-cereale",amido:"Amido/Tubero",frutta:"Frutta secca",seme:"Seme",legante:"Legante",alga:"Alga",fungo:"Fungo",radice:"Radice/Altro"};
-const FAMS = ["tutti","legume","pseudo","amido","frutta","seme","legante","alga","fungo","radice"];
-const SC_CLS = ["s0","s1","s2","s3","s4","s5"];
-const SC_LBL = ["—","Incompatibili","Criticità","Neutro","Buona","Ottima"];
-
-function App(){
-  const [tab,setTab] = useState("ingredienti");
-  const [pubId,setPubId] = useState(()=>localStorage.getItem(LS_ID)||PUB_ID);
-  const [scriptUrl,setScriptUrl] = useState(()=>localStorage.getItem(LS_SC)||SCRIPT_URL);
-  const [data,setData] = useState({ing:[],add:[],blend:[],prove:[],reol:[],chim:[],sens:[]});
-  const [loading,setLoading] = useState(false);
-  const [conn,setConn] = useState("idle");
-
-  const load = useCallback(async()=>{
-    if(!pubId){setConn("idle");return;}
-    setLoading(true);setConn("loading");
-    try{
-      const [ing,add,blend,prove,reol,chim,sens] = await Promise.all([
-        fetchTab(pubId,"Ingredienti"),fetchTab(pubId,"Additivi"),
-        fetchTab(pubId,"Blend"),fetchTab(pubId,"Prove_DoE"),
-        fetchTab(pubId,"Matrici_Reol"),fetchTab(pubId,"Matrici_Chim"),fetchTab(pubId,"Matrici_Sens"),
-      ]);
-      const d={ing,add,blend,prove,reol,chim,sens};
-      setData(d); localStorage.setItem(LS_DATA,JSON.stringify(d)); setConn("ok");
-    }catch(e){
-      const c=localStorage.getItem(LS_DATA);
-      if(c){setData(JSON.parse(c));} setConn("error");
-    }
-    setLoading(false);
-  },[pubId]);
-
-  useEffect(()=>{load();},[load]);
-
-  const TABS=[{id:"ingredienti",l:"Ingredienti"},{id:"additivi",l:"Additivi"},{id:"blend",l:"Blend"},
-               {id:"matrici",l:"Matrici"},{id:"doe",l:"Prove DoE"},{id:"config",l:"Configurazione"}];
-
-  return(
-    <div>
-      <nav className="nav">
-        <div className="nav-brand">CerealFree <span>R&D</span></div>
-        <div className="nav-tabs">
-          {TABS.map(t=><button key={t.id} className={`nt${tab===t.id?" on":""}`} onClick={()=>setTab(t.id)}>{t.l}</button>)}
-        </div>
-        <div className="nav-st">
-          <div className={`dot${conn==="loading"?" loading":conn==="error"?" error":""}`}/>
-          <span>{conn==="ok"?"Connesso":conn==="loading"?"Caricamento...":conn==="error"?"Offline":"—"}</span>
-          {conn==="ok"&&<button onClick={load} style={{background:"none",border:"none",color:"var(--g2)",fontSize:13,cursor:"pointer",padding:"0 2px"}}>↻</button>}
-        </div>
-      </nav>
-      {tab==="ingredienti"&&<IngredientiPage data={data.ing} loading={loading}/>}
-      {tab==="additivi"&&<AdditiviPage data={data.add} loading={loading}/>}
-      {tab==="blend"&&<BlendPage data={data.blend} loading={loading}/>}
-      {tab==="matrici"&&<MatriciPage data={data} loading={loading} scriptUrl={scriptUrl} onRefresh={load}/>}
-      {tab==="doe"&&<DoePage data={data} loading={loading} scriptUrl={scriptUrl} onRefresh={load}/>}
-      {tab==="config"&&<ConfigPage pubId={pubId} setPubId={setPubId} scriptUrl={scriptUrl} setScriptUrl={setScriptUrl} conn={conn} onSave={()=>{localStorage.setItem(LS_ID,pubId);localStorage.setItem(LS_SC,scriptUrl);load();}}/>}
+function Loading() {
+  return (
+    <div className="loading">
+      <div className="spinner"/>
+      <span style={{fontSize:13,color:'var(--n5)'}}>Caricamento dati...</span>
     </div>
   );
 }
 
-function IngredientiPage({data,loading}){
-  const [q,setQ]=useState(""),[fam,setFam]=useState("tutti"),[sel,setSel]=useState(null);
-  const filt=data.filter(i=>{
-    const mf=fam==="tutti"||i.famiglia===fam;
-    const mq=!q||i.nome?.toLowerCase().includes(q.toLowerCase())||i.note_tecnologiche?.toLowerCase().includes(q.toLowerCase())||i.applicazioni?.toLowerCase().includes(q.toLowerCase());
-    return mf&&mq;
-  });
-  const pct=(v,mx)=>Math.min(Math.round((parseFloat(v)||0)/mx*100),100);
-  return(
-    <div className="page">
-      <div className="ph"><div className="pt">Database ingredienti</div><div className="ps">{filt.length} di {data.length} ingredienti · Clicca per il dettaglio completo</div></div>
-      <div className="sbar">
-        <input className="sinput" placeholder="Cerca nome, uso, proprietà..." value={q} onChange={e=>setQ(e.target.value)}/>
-        {FAMS.map(f=><button key={f} className={`fbtn${fam===f?" on":""}`} onClick={()=>setFam(f)}>{f==="tutti"?"Tutti":FAM[f]}</button>)}
+function SearchInput({ value, onChange, placeholder }) {
+  return (
+    <div className="search-wrap">
+      <span className="search-icon">⌕</span>
+      <input className="search-input" value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder||'Cerca...'} />
+    </div>
+  );
+}
+
+// ── NAV ───────────────────────────────────────────────────────
+const MODULES = [
+  { id:'dashboard', label:'Dashboard', icon:'◉' },
+  { id:'ingredienti', label:'Ingredienti', icon:'◈' },
+  { id:'additivi', label:'Additivi', icon:'◇' },
+  { id:'blend', label:'Blend builder', icon:'◐' },
+  { id:'matrici', label:'Matrici', icon:'▦' },
+  { id:'marketing', label:'Marketing', icon:'◆' },
+  { id:'doe', label:'Prove DoE', icon:'◎' },
+  { id:'operativa', label:'Scheda terzista', icon:'◻' },
+];
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+function Dashboard({ data }) {
+  const { ingredienti, additivi, blend, matrici_reol, prove_doe, meta } = data;
+  const verified = ingredienti.filter(i => i.stato === 'verificato').length;
+  const highMkt  = ingredienti.filter(i => i.potenziale_marketing === 'alto').length;
+  const claimEU  = ingredienti.filter(i => i.claim_salutistico_eu &&
+    i.claim_salutistico_eu.includes('432/2012')).length;
+  const doeFormali = prove_doe.filter(p => p.stato === 'doe_formale').length;
+  const doeEspl    = prove_doe.filter(p => p.stato === 'esplorativa').length;
+
+  return (
+    <div>
+      <div style={{marginBottom:20}}>
+        <h1 style={{fontSize:20,fontWeight:600,color:'var(--n9)'}}>R&D Dashboard</h1>
+        {meta?.generato && (
+          <p style={{fontSize:12,color:'var(--n5)',fontFamily:'var(--mono)',marginTop:2}}>
+            Ultimo aggiornamento: {new Date(meta.generato).toLocaleString('it-IT')}
+          </p>
+        )}
       </div>
-      {loading?<div className="empty"><div className="spin"/></div>:!data.length?<div className="empty">Nessun dato — vai in Configurazione e verifica la connessione.</div>:!filt.length?<div className="empty">Nessun risultato.</div>:(
-        <div className="igrid">
-          {filt.map(i=>(
-            <div key={i.id} className="icard" onClick={()=>setSel(i)}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:4}}>
-                <div className="iname">{i.nome}</div>
-                <span className={`tag t-${i.famiglia}`}>{FAM[i.famiglia]||i.famiglia}</span>
-              </div>
-              <div className="ilatin">{i.nome_latino}</div>
-              {i.attivato==="si"&&<span className="att">⚡ Attivato</span>}
-              <div className="ibars">
-                <div className="br"><span className="bl">Prot</span><div className="bt"><div className="bf bp" style={{width:pct(i.proteina_g,57)+"%"}}/></div><span style={{fontSize:9,color:"var(--n5)",fontFamily:"var(--mono)"}}>{i.proteina_g}g</span></div>
-                <div className="br"><span className="bl">Amid</span><div className="bt"><div className="bf ba" style={{width:pct(i.amido_g,98)+"%"}}/></div><span style={{fontSize:9,color:"var(--n5)",fontFamily:"var(--mono)"}}>{i.amido_g}g</span></div>
-                <div className="br"><span className="bl">Lip</span><div className="bt"><div className="bf bl2" style={{width:pct(i.lipidi_g,76)+"%"}}/></div><span style={{fontSize:9,color:"var(--n5)",fontFamily:"var(--mono)"}}>{i.lipidi_g}g</span></div>
-              </div>
-              <div className="ifoot">
-                <span>IG {i.ig||"<5"}</span>
-                <span>Gel {parseFloat(i.temp_gel_c)>0?i.temp_gel_c+"°C":"—"}</span>
-                <span className={`tag t-${i.stato}`}>{i.stato==="teorico"?"teorico":"✓ valid."}</span>
-              </div>
-            </div>
-          ))}
+
+      <div className="grid-4" style={{marginBottom:16}}>
+        <div className="card stat">
+          <div className="stat-label">Ingredienti</div>
+          <div className="stat-value">{ingredienti.length}</div>
+          <div className="stat-sub">{verified} verificati</div>
         </div>
-      )}
-      {sel&&(
-        <div className="dp open">
-          <button className="dclose" onClick={()=>setSel(null)}>×</button>
-          <div className="dhead">
-            <div className="dname">{sel.nome}</div>
-            <div className="dlatin">{sel.nome_latino}</div>
-            <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-              <span className={`tag t-${sel.famiglia}`}>{FAM[sel.famiglia]||sel.famiglia}</span>
-              {sel.attivato==="si"&&<span className="att">⚡ Attivato</span>}
-              <span className={`tag t-${sel.stato}`}>{sel.stato}</span>
-            </div>
-          </div>
-          <div className="dsec">Profilo nutrizionale (per 100g)</div>
-          <div className="dgrid">
-            {[["Proteine",sel.proteina_g+"g"],["Amido/Carboidrati",sel.amido_g+"g"],["Lipidi",sel.lipidi_g+"g"],
-              ["Indice glicemico",sel.ig||"<5"],["T° gelatinizzazione",parseFloat(sel.temp_gel_c)>0?sel.temp_gel_c+"°C":"n/a"],
-              ["Assorbimento idrico",sel.assorbimento_idrico],["pH impasto",sel.ph_impasto],["Shelf life",sel.shelf_life]
-            ].map(([l,v])=>(
-              <div key={l} className="dstat"><div className="dstat-l">{l}</div><div className="dstat-v">{v}</div></div>
+        <div className="card stat">
+          <div className="stat-label">Additivi + Enzimi</div>
+          <div className="stat-value">{additivi.length}</div>
+          <div className="stat-sub">{additivi.filter(a=>a.categoria==='enzima').length} enzimi</div>
+        </div>
+        <div className="card stat">
+          <div className="stat-label">Blend</div>
+          <div className="stat-value">{blend.length}</div>
+          <div className="stat-sub">{blend.filter(b=>b.stato==='verificato').length} verificati</div>
+        </div>
+        <div className="card stat">
+          <div className="stat-label">Coppie matrici</div>
+          <div className="stat-value">{matrici_reol.length}</div>
+          <div className="stat-sub">reol/chim/sens</div>
+        </div>
+      </div>
+
+      <div className="grid-2" style={{marginBottom:16}}>
+        <div className="card">
+          <div className="card-title"><span className="card-title-icon">◆</span>Potenziale marketing</div>
+          <div className="grid-3">
+            {['alto','medio','basso'].map(l => (
+              <div className="stat" key={l}>
+                <div className="stat-label">{l.charAt(0).toUpperCase()+l.slice(1)}</div>
+                <div className="stat-value">
+                  {ingredienti.filter(i=>i.potenziale_marketing===l).length}
+                </div>
+              </div>
             ))}
           </div>
-          {sel.attivato==="si"&&sel.protocollo_attivazione&&(
-            <><div className="dsec">Protocollo attivazione</div><div className="datt">{sel.protocollo_attivazione}</div></>
-          )}
-          <div className="dsec">Note tecnologiche</div>
-          <div className="dnote">{sel.note_tecnologiche}</div>
-          {sel.applicazioni&&(
-            <><div className="dsec">Applicazioni</div>
-            <div className="duses">{sel.applicazioni.split(",").map(a=><span key={a} className="uchip">{a.trim()}</span>)}</div></>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AdditiviPage({data,loading}){
-  const [f,setF]=useState("tutti");
-  const cats=["tutti","antiossidante","umettante","conservante naturale","miglioratore strutturale"];
-  const filt=data.filter(a=>{if(!a||!a.nome)return false;return f==="tutti"||(a.categoria||"")===f;});
-  return(
-    <div className="page">
-      <div className="ph"><div className="pt">Additivi clean label</div><div className="ps">Zero numeri E — solo ingredienti riconoscibili dal consumatore</div></div>
-      <div className="sbar" style={{marginBottom:"1rem"}}>{cats.map(c=><button key={c} className={`fbtn${f===c?" on":""}`} onClick={()=>setF(c)}>{c==="tutti"?"Tutti":c}</button>)}</div>
-      {loading?<div className="empty"><div className="spin"/></div>:!data.length?<div className="empty">Nessun dato.</div>:(
-        <div className="agrid">
-          {filt.map(a=>(
-            <div key={a.id} className="acard">
-              <div className="aname">{a.nome}</div>
-              <div className={`acat cat-${(a.categoria||"").replace(/ /g,"-")}`}>{a.categoria||""}</div>
-              <div className="adose">Dose: {a.dose_min_pct}–{a.dose_max_pct}% · <strong>Busta {a.busta}</strong></div>
-              <div style={{marginBottom:5}}><span className={`tag t-${a.stato}`}>{a.stato}</span></div>
-              <div className="anote">{a.meccanismo}</div>
-              {a.note_tecniche&&<div className="anote" style={{marginTop:5,color:"var(--n5)"}}>{a.note_tecniche}</div>}
-              <div className="aetich">In etichetta: «{a.in_etichetta}»</div>
+          <div style={{marginTop:12,paddingTop:12,borderTop:'1px solid var(--n2)'}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:13}}>
+              <span style={{color:'var(--n6)'}}>Novità mercato GDO</span>
+              <strong>{ingredienti.filter(i=>i.novita_mercato==='si').length}</strong>
             </div>
-          ))}
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:13,marginTop:4}}>
+              <span style={{color:'var(--n6)'}}>Claim EU approvati</span>
+              <strong>{claimEU}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-title"><span className="card-title-icon">◎</span>Piano DoE</div>
+          <div className="grid-2">
+            <div className="stat">
+              <div className="stat-label">Esplorative</div>
+              <div className="stat-value">{doeEspl}</div>
+              <div className="stat-sub">/ 6 previste</div>
+            </div>
+            <div className="stat">
+              <div className="stat-label">Formali</div>
+              <div className="stat-value">{doeFormali}</div>
+              <div className="stat-sub">/ 8 previste</div>
+            </div>
+          </div>
+          <div style={{marginTop:12}}>
+            <div style={{fontSize:12,color:'var(--n6)',marginBottom:4}}>Progresso prove formali</div>
+            <div className="ig-bar" style={{height:8}}>
+              <div className="ig-fill" style={{
+                width:`${Math.min(100,(doeFormali/8)*100)}%`,
+                background:'var(--g6)'
+              }}/>
+            </div>
+            <div style={{fontSize:11,color:'var(--n5)',marginTop:3,fontFamily:'var(--mono)'}}>
+              {doeFormali}/8 ({Math.round((doeFormali/8)*100)}%)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title"><span className="card-title-icon">◉</span>Note pre-DoE — da leggere prima di ogni sessione</div>
+        <Alert type="amber">
+          <strong>IG amidi da cotti:</strong> tapioca 94, fecola 98, mais waxy 99. IG blend pane base da cotto ~55-60. Non usare valori crudi per claim nutrizionali.
+        </Alert>
+        <Alert type="amber">
+          <strong>GOX E03:</strong> se emerge texture gommosa eccessiva, inserire GOX 0.004% come variabile di controllo prima di modificare le variabili DoE.
+        </Alert>
+        <Alert type="green">
+          <strong>Fitasi E06:</strong> inserire 0.02% in fase D-1 durante ammollo ceci — migliora biodisponibilità Fe/Zn/Ca/Mg senza alterare ricetta. Segnare se usata in ogni prova.
+        </Alert>
+      </div>
+    </div>
+  );
+}
+
+// ── INGREDIENTI ───────────────────────────────────────────────
+function Ingredienti({ data }) {
+  const { ingredienti, ig_per_stato } = data;
+  const [q, setQ]       = useState('');
+  const [fam, setFam]   = useState('');
+  const [sel, setSel]   = useState(null);
+
+  const famiglie = [...new Set(ingredienti.map(i => i.famiglia))].sort();
+  const filtered = ingredienti.filter(i => {
+    const match = !q || i.nome.toLowerCase().includes(q.toLowerCase()) ||
+      (i.nome_latino||'').toLowerCase().includes(q.toLowerCase());
+    const famOk = !fam || i.famiglia === fam;
+    return match && famOk;
+  });
+
+  const igStati = sel ? ig_per_stato.filter(r => String(r.ingrediente_id) === String(sel.id)) : [];
+
+  if (sel) return <IngredienteDetail ing={sel} igStati={igStati} onBack={() => setSel(null)} />;
+
+  return (
+    <div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+        <h2 style={{fontSize:16,fontWeight:600}}>Ingredienti <span style={{color:'var(--n5)',fontWeight:400,fontSize:13}}>({filtered.length}/{ingredienti.length})</span></h2>
+      </div>
+      <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap'}}>
+        <div style={{flex:1,minWidth:200}}>
+          <SearchInput value={q} onChange={setQ} placeholder="Cerca ingrediente o nome latino..." />
+        </div>
+        <select className="input" style={{width:'auto'}} value={fam} onChange={e=>setFam(e.target.value)}>
+          <option value="">Tutte le famiglie</option>
+          {famiglie.map(f => <option key={f} value={f}>{f}</option>)}
+        </select>
+      </div>
+      <div className="card" style={{padding:0}}>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Ingrediente</th>
+                <th>Famiglia</th>
+                <th>Prot.</th>
+                <th>IG crudo</th>
+                <th>IG cotto</th>
+                <th>Assorbimento</th>
+                <th>Busta</th>
+                <th>Stato</th>
+                <th>Mkt</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(i => (
+                <tr key={i.id} style={{cursor:'pointer'}} onClick={() => setSel(i)}>
+                  <td>
+                    <div style={{fontWeight:500,color:'var(--n9)'}}>{i.nome}</div>
+                    {i.nome_latino && <div style={{fontSize:11,color:'var(--n5)',fontStyle:'italic'}}>{i.nome_latino}</div>}
+                  </td>
+                  <td><Badge cls={famColors[i.famiglia]}>{i.famiglia}</Badge></td>
+                  <td className="td-mono">{i.proteina_g||'—'}</td>
+                  <td className="td-mono">{i.ig_crudo||'—'}</td>
+                  <td className="td-mono">{i.ig_cotto||'—'}</td>
+                  <td className="td-mono">{i.assorbimento_idrico_pct ? `${i.assorbimento_idrico_pct}%` : '—'}</td>
+                  <td><Badge>{i.busta_consigliata||'—'}</Badge></td>
+                  <td><Badge cls={statoColors[i.stato]}>{i.stato}</Badge></td>
+                  <td>{i.potenziale_marketing ? <Badge cls={i.potenziale_marketing==='alto'?'badge-green':i.potenziale_marketing==='medio'?'badge-amber':'badge-gray'}>{i.potenziale_marketing}</Badge> : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IngredienteDetail({ ing, igStati, onBack }) {
+  return (
+    <div>
+      <button className="btn btn-secondary btn-sm" onClick={onBack} style={{marginBottom:16}}>
+        ← Torna alla lista
+      </button>
+      <div style={{display:'flex',alignItems:'baseline',gap:10,marginBottom:16,flexWrap:'wrap'}}>
+        <h2 style={{fontSize:18,fontWeight:600}}>{ing.nome}</h2>
+        <span style={{fontSize:13,fontStyle:'italic',color:'var(--n5)'}}>{ing.nome_latino}</span>
+        <Badge cls={famColors[ing.famiglia]}>{ing.famiglia}</Badge>
+        <Badge cls={statoColors[ing.stato]}>{ing.stato}</Badge>
+      </div>
+
+      <div className="grid-2">
+        <div className="card">
+          <div className="card-title">Macronutrienti (per 100g)</div>
+          {[['Proteine',ing.proteina_g,'g'],['Carboidrati',ing.carboidrati_g,'g'],
+            ['Amido puro',ing.amido_puro_g,'g'],['Lipidi',ing.lipidi_g,'g'],
+            ['Fibra totale',ing.fibra_g,'g'],['Fibra solubile',ing.fibra_solubile_g,'g'],
+            ['Zuccheri',ing.zuccheri_g,'g'],['Energia',ing.kcal,'kcal'],
+          ].map(([l,v,u]) => v ? (
+            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid var(--n2)',fontSize:13}}>
+              <span style={{color:'var(--n6)'}}>{l}</span>
+              <span style={{fontFamily:'var(--mono)',fontWeight:500}}>{v} {u}</span>
+            </div>
+          ) : null)}
+        </div>
+
+        <div className="card">
+          <div className="card-title">Parametri tecnologici</div>
+          {[['pH nativo',ing.ph_nativo,''],['pH impasto',ing.ph_impasto,''],
+            ['Temp. gel.',ing.temp_gel_c,'°C'],['Assorbimento',ing.assorbimento_idrico_pct,'%'],
+            ['Viscosità gel',ing.viscosita_gel,''],['Protocollo terzista',ing.protocollo_terzista,''],
+            ['Busta consigliata',ing.busta_consigliata,''],
+          ].map(([l,v,u]) => v ? (
+            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid var(--n2)',fontSize:13}}>
+              <span style={{color:'var(--n6)'}}>{l}</span>
+              <span style={{fontFamily:'var(--mono)',fontWeight:500}}>{v}{u}</span>
+            </div>
+          ) : null)}
+        </div>
+
+        <div className="card">
+          <div className="card-title">Indice glicemico per stato</div>
+          {ing.ig_crudo !== undefined && (
+            <div style={{marginBottom:8}}>
+              <div style={{fontSize:12,color:'var(--n5)',marginBottom:4}}>Da ingredienti.json</div>
+              <div style={{display:'flex',gap:16}}>
+                {ing.ig_crudo && <div><div className="stat-label">IG crudo</div><div style={{fontSize:20,fontWeight:600,fontFamily:'var(--mono)'}}>{ing.ig_crudo}</div></div>}
+                {ing.ig_cotto && <div><div className="stat-label">IG cotto</div><div style={{fontSize:20,fontWeight:600,fontFamily:'var(--mono)',color:ing.ig_cotto>55?'var(--r8)':'var(--g8)'}}>{ing.ig_cotto}</div></div>}
+              </div>
+              {ing.ig_fonte && <div style={{fontSize:11,color:'var(--n5)',marginTop:6,fontStyle:'italic'}}>{ing.ig_fonte}</div>}
+            </div>
+          )}
+          {igStati.length > 0 && (
+            <div>
+              <div style={{fontSize:12,color:'var(--n5)',marginBottom:4,marginTop:8,paddingTop:8,borderTop:'1px solid var(--n2)'}}>IG per stato processo</div>
+              {igStati.map((r,i) => (
+                <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'4px 0',fontSize:13}}>
+                  <span style={{color:'var(--n6)'}}>{r.stato_processo}</span>
+                  <div style={{textAlign:'right'}}>
+                    <span style={{fontFamily:'var(--mono)',fontWeight:500,color:r.ig_valore>55?'var(--r8)':r.ig_valore>0?'var(--g8)':'var(--n5)'}}>{r.ig_valore??'N/A'}</span>
+                    {r.ig_fonte && <div style={{fontSize:10,color:'var(--n5)',fontStyle:'italic'}}>{r.ig_fonte}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="card">
+          <div className="card-title">Profilo anti-infiammatorio</div>
+          {[['Lectine presenti',ing.lectine_presenti],['Prolammine presenti',ing.prolammine_presenti],
+            ['Acido fitico',ing.acido_fitico_mg ? `${ing.acido_fitico_mg} mg/100g` : null],
+            ['Fitati post-attivazione',ing.fitati_post_attivazione_pct ? `${ing.fitati_post_attivazione_pct}%` : null],
+            ['Amido resistente',ing.amido_resistente_g ? `${ing.amido_resistente_g} g` : null],
+            ['Inulina',ing.inulina_g ? `${ing.inulina_g} g` : null],
+            ['Beta-glucani',ing.beta_glucani_g ? `${ing.beta_glucani_g} g` : null],
+          ].map(([l,v]) => v ? (
+            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid var(--n2)',fontSize:13}}>
+              <span style={{color:'var(--n6)'}}>{l}</span>
+              <span style={{fontFamily:'var(--mono)',fontWeight:500}}>{v}</span>
+            </div>
+          ) : null)}
+        </div>
+      </div>
+
+      {(ing.storia_ingrediente || ing.claim_salutistico_eu) && (
+        <div className="card" style={{marginTop:16}}>
+          <div className="card-title">Layer marketing</div>
+          <div className="grid-2">
+            {ing.storia_ingrediente && (
+              <div>
+                <div style={{fontSize:12,color:'var(--n5)',marginBottom:6}}>Storia ingrediente</div>
+                <p style={{fontSize:13,color:'var(--n7)',lineHeight:1.6}}>{ing.storia_ingrediente}</p>
+              </div>
+            )}
+            <div>
+              {ing.claim_salutistico_eu && (
+                <div style={{marginBottom:10}}>
+                  <div style={{fontSize:12,color:'var(--n5)',marginBottom:6}}>Claim UE 432/2012</div>
+                  <p style={{fontSize:13,color:'var(--b8)',lineHeight:1.6}}>{ing.claim_salutistico_eu}</p>
+                </div>
+              )}
+              {ing.certificazioni_possibili && (
+                <div>
+                  <div style={{fontSize:12,color:'var(--n5)',marginBottom:4}}>Certificazioni possibili</div>
+                  <p style={{fontSize:13,color:'var(--n7)'}}>{ing.certificazioni_possibili}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {ing.note_tecnologiche && (
+        <div className="card" style={{marginTop:16}}>
+          <div className="card-title">Note tecnologiche</div>
+          <p style={{fontSize:13,color:'var(--n7)',lineHeight:1.6}}>{ing.note_tecnologiche}</p>
+          {ing.fonte && <div style={{fontSize:11,color:'var(--n5)',marginTop:8,fontStyle:'italic'}}>Fonte: {ing.fonte}</div>}
         </div>
       )}
     </div>
   );
 }
 
-function BlendPage({data,loading}){
-  const [sel,setSel]=useState(null);
-  const parseComp=j=>{try{return JSON.parse(j);}catch{return{};}};
-  const scoreColor=v=>+v>=80?"var(--g7)":+v>=65?"var(--a6)":"var(--r8)";
-  return(
-    <div className="page">
-      <div className="ph"><div className="pt">Blend validati</div><div className="ps">8 formulazioni di partenza per categoria di prodotto · Clicca per i dettagli</div></div>
-      {loading?<div className="empty"><div className="spin"/></div>:!data.length?<div className="empty">Nessun dato.</div>:(
-        <div className="bgrid">
-          {data.map(b=>{
-            const comp=parseComp(b.composizione_json);
-            return(
-              <div key={b.id} className="bcard" onClick={()=>setSel(b)}>
-                <div className="bname">{b.nome}</div>
-                <div className="bcat">{b.categoria}</div>
-                <div className="bscores">
-                  {[["Struttura",b.score_struttura],["Sapore",b.score_sapore],["Lievit.",b.score_lievitazione],["Shelf",b.score_shelflife]].map(([l,v])=>(
-                    <div key={l} className="bsc"><div className="bscv" style={{color:scoreColor(v)}}>{v&&v!=="0"?parseInt(v)||v:"—"}</div><div className="bscl">{l}</div></div>
-                  ))}
-                </div>
-                <div className="bmeta"><span>IG {parseInt(b.ig_stimato)||b.ig_stimato||"—"}</span><span>·</span><span>Prot {parseInt(b.proteine_g)||b.proteine_g||"—"}g</span><span>·</span><span>Idr {b.idratazione_min||"—"}–{b.idratazione_max||"—"}%</span></div>
-                <div className="bpills">
-                  {Object.entries(comp).slice(0,5).map(([k,v])=><span key={k} className="bpill">{k.replace(/_/g," ")} {v}%</span>)}
-                  {Object.keys(comp).length>5&&<span className="bpill">+{Object.keys(comp).length-5}</span>}
-                </div>
-              </div>
-            );
-          })}
+// ── ADDITIVI ──────────────────────────────────────────────────
+function Additivi({ data }) {
+  const { additivi } = data;
+  const [q, setQ] = useState('');
+  const [cat, setCat] = useState('');
+  const categorie = [...new Set(additivi.map(a=>a.categoria))].sort();
+  const filtered = additivi.filter(a => {
+    const match = !q || a.nome.toLowerCase().includes(q.toLowerCase());
+    const catOk = !cat || a.categoria === cat;
+    return match && catOk;
+  });
+
+  return (
+    <div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+        <h2 style={{fontSize:16,fontWeight:600}}>Additivi & Enzimi <span style={{color:'var(--n5)',fontWeight:400,fontSize:13}}>({filtered.length}/{additivi.length})</span></h2>
+      </div>
+      <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap'}}>
+        <div style={{flex:1,minWidth:180}}>
+          <SearchInput value={q} onChange={setQ} placeholder="Cerca additivo..." />
         </div>
-      )}
-      {sel&&(
-        <div className="mover" onClick={e=>e.target===e.currentTarget&&setSel(null)}>
-          <div className="modal">
-            <div className="mhead"><div className="mtitle">{sel.nome}</div><button className="mclose" onClick={()=>setSel(null)}>×</button></div>
-            <div className="mbody">
-              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
-                <span className="tag t-teorico">{sel.stato}</span>
-                <span style={{fontSize:11,color:"var(--n5)"}}>IG {sel.ig_stimato} · Prot {sel.proteine_g}g · Idr {sel.idratazione_min}–{sel.idratazione_max}%</span>
+        <select className="input" style={{width:'auto'}} value={cat} onChange={e=>setCat(e.target.value)}>
+          <option value="">Tutte le categorie</option>
+          {categorie.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+      <div className="card" style={{padding:0}}>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Nome</th><th>Categoria</th><th>Busta</th>
+                <th>Dose min</th><th>Dose max</th><th>Dose ottim.</th>
+                <th>Ausil. tecn.</th><th>non-OGM</th><th>Stato</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(a => (
+                <tr key={a.id}>
+                  <td className="td-mono" style={{color:'var(--n5)'}}>{a.id}</td>
+                  <td>
+                    <div style={{fontWeight:500}}>{a.nome}</div>
+                    {a.funzione_primaria && <div style={{fontSize:11,color:'var(--n5)'}}>{a.funzione_primaria}</div>}
+                  </td>
+                  <td><Badge cls={a.categoria==='enzima'?'badge-blue':a.categoria==='antiossidante'?'badge-amber':'badge-gray'}>{a.categoria}</Badge></td>
+                  <td><Badge>{a.busta||'—'}</Badge></td>
+                  <td className="td-mono">{a.dose_min_pct ? `${a.dose_min_pct}%` : '—'}</td>
+                  <td className="td-mono">{a.dose_max_pct ? `${a.dose_max_pct}%` : '—'}</td>
+                  <td className="td-mono">{a.dose_ottimale_pct ? `${a.dose_ottimale_pct}%` : '—'}</td>
+                  <td>{a.ausiliario_tecnologico === 'si' ? <Badge cls="badge-green">si</Badge> : <Badge>no</Badge>}</td>
+                  <td style={{fontSize:12,color:'var(--n6)',maxWidth:120}}>{a.non_ogm_verificato ? a.non_ogm_verificato.substring(0,30)+'…' : '—'}</td>
+                  <td><Badge cls={statoColors[a.stato]}>{a.stato}</Badge></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── BLEND BUILDER ─────────────────────────────────────────────
+function BlendBuilder({ data }) {
+  const { ingredienti, additivi, matrici_reol, matrici_chim, matrici_sens, matrici_additivi, ig_per_stato } = data;
+  const [selectedIng, setSelectedIng] = useState([]);
+  const [selectedAdd, setSelectedAdd] = useState([]);
+  const [doses, setDoses] = useState({});
+  const [qIng, setQIng]  = useState('');
+  const [qAdd, setQAdd]  = useState('');
+  const [tab, setTab]     = useState('composizione');
+
+  const addIngrediente = (ing) => {
+    if (selectedIng.find(i => i.id === ing.id)) return;
+    setSelectedIng(prev => [...prev, ing]);
+    setDoses(prev => ({...prev, [`i_${ing.id}`]: 10}));
+  };
+
+  const removeIngrediente = (id) => {
+    setSelectedIng(prev => prev.filter(i => i.id !== id));
+    setDoses(prev => { const d = {...prev}; delete d[`i_${id}`]; return d; });
+  };
+
+  const addAdditivo = (add) => {
+    if (selectedAdd.find(a => a.id === add.id)) return;
+    setSelectedAdd(prev => [...prev, add]);
+    setDoses(prev => ({...prev, [`a_${add.id}`]: add.dose_ottimale_pct || 1}));
+  };
+
+  const removeAdditivo = (id) => {
+    setSelectedAdd(prev => prev.filter(a => a.id !== id));
+    setDoses(prev => { const d = {...prev}; delete d[`a_${id}`]; return d; });
+  };
+
+  // Calcolo IG composito
+  const igComposito = useMemo(() => {
+    if (!selectedIng.length) return null;
+    const totDose = selectedIng.reduce((s, i) => s + (Number(doses[`i_${i.id}`])||0), 0);
+    if (!totDose) return null;
+    let igCrudo = 0, igCotto = 0, hasCrudo = false, hasCotto = false;
+    selectedIng.forEach(i => {
+      const d = Number(doses[`i_${i.id}`])||0;
+      if (i.ig_crudo) { igCrudo += (i.ig_crudo * d) / totDose; hasCrudo = true; }
+      if (i.ig_cotto) { igCotto += (i.ig_cotto * d) / totDose; hasCotto = true; }
+    });
+    return {
+      crudo: hasCrudo ? Math.round(igCrudo) : null,
+      cotto: hasCotto ? Math.round(igCotto) : null,
+      totDose,
+    };
+  }, [selectedIng, doses]);
+
+  // Claim EU aggregati
+  const claimAggregati = useMemo(() => {
+    return selectedIng
+      .filter(i => i.claim_salutistico_eu && i.claim_salutistico_eu.includes('432/2012') && (Number(doses[`i_${i.id}`])||0) >= 5)
+      .map(i => ({ nome: i.nome, claim: i.claim_salutistico_eu }));
+  }, [selectedIng, doses]);
+
+  // Interazioni critiche
+  const interazioniCritiche = useMemo(() => {
+    const critiche = [];
+    const ids = selectedIng.map(i => String(i.id));
+    const addIds = selectedAdd.map(a => String(a.id));
+
+    // Ingrediente × ingrediente
+    [...matrici_reol, ...matrici_chim, ...matrici_sens].forEach(r => {
+      if (ids.includes(String(r.id_a)) && ids.includes(String(r.id_b)) && r.punteggio <= 2) {
+        const a = ingredienti.find(i => String(i.id) === String(r.id_a));
+        const b = ingredienti.find(i => String(i.id) === String(r.id_b));
+        critiche.push({ tipo: 'ingrediente', a: a?.nome, b: b?.nome, punteggio: r.punteggio, note: r.note });
+      }
+    });
+
+    // Additivo × ingrediente
+    matrici_additivi.forEach(r => {
+      if (addIds.includes(String(r.additivo_id)) && ids.includes(String(r.ingrediente_id)) && r.punteggio <= 2) {
+        const a = additivi.find(x => String(x.id) === String(r.additivo_id));
+        const b = ingredienti.find(i => String(i.id) === String(r.ingrediente_id));
+        critiche.push({ tipo: 'additivo', a: a?.nome, b: b?.nome, punteggio: r.punteggio, note: r.note });
+      }
+    });
+
+    return critiche;
+  }, [selectedIng, selectedAdd, matrici_reol, matrici_chim, matrici_sens, matrici_additivi]);
+
+  const filteredIng = ingredienti.filter(i =>
+    !selectedIng.find(s=>s.id===i.id) &&
+    (i.nome.toLowerCase().includes(qIng.toLowerCase()))
+  ).slice(0, 15);
+
+  const filteredAdd = additivi.filter(a =>
+    !selectedAdd.find(s=>s.id===a.id) &&
+    (a.nome.toLowerCase().includes(qAdd.toLowerCase()))
+  ).slice(0, 10);
+
+  return (
+    <div>
+      <h2 style={{fontSize:16,fontWeight:600,marginBottom:16}}>Blend Builder</h2>
+
+      <div className="tabs">
+        {['composizione','calcoli','interazioni'].map(t => (
+          <div key={t} className={`tab${tab===t?' active':''}`} onClick={()=>setTab(t)}>
+            {t.charAt(0).toUpperCase()+t.slice(1)}
+            {t==='interazioni' && interazioniCritiche.length > 0 &&
+              <span style={{marginLeft:6,background:'var(--r6)',color:'var(--wh)',borderRadius:10,padding:'0 5px',fontSize:10}}>{interazioniCritiche.length}</span>}
+          </div>
+        ))}
+      </div>
+
+      {tab === 'composizione' && (
+        <div className="grid-2">
+          <div>
+            <div className="card" style={{marginBottom:16}}>
+              <div className="card-title">Ingredienti selezionati</div>
+              {selectedIng.length === 0 && <p style={{fontSize:13,color:'var(--n5)'}}>Nessun ingrediente selezionato</p>}
+              {selectedIng.map(i => (
+                <div key={i.id} className="dose-row">
+                  <div style={{flex:1}}>
+                    <div className="dose-name">{i.nome}</div>
+                    <div className="dose-fam">{i.famiglia} · busta {i.busta_consigliata||'?'}</div>
+                  </div>
+                  <input type="number" className="input dose-input" min="0" max="100" step="0.5"
+                    value={doses[`i_${i.id}`]||0}
+                    onChange={e=>setDoses(d=>({...d,[`i_${i.id}`]:e.target.value}))} />
+                  <span className="dose-unit">%</span>
+                  <button onClick={()=>removeIngrediente(i.id)} style={{color:'var(--n4)',fontSize:16,padding:'0 4px'}}>×</button>
+                </div>
+              ))}
+              <div style={{marginTop:12}}>
+                <div style={{fontSize:12,color:'var(--n6)',marginBottom:6}}>Totale ingredienti: <strong style={{fontFamily:'var(--mono)'}}>
+                  {selectedIng.reduce((s,i)=>s+(Number(doses[`i_${i.id}`])||0),0).toFixed(1)}%
+                </strong></div>
               </div>
-              <div className="msec">Composizione</div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:10}}>
-                {Object.entries(parseComp(sel.composizione_json)).map(([k,v])=>(
-                  <span key={k} style={{padding:"3px 9px",borderRadius:8,background:"var(--g0)",border:"1px solid var(--g1)",fontSize:12,color:"var(--g8)"}}>{k.replace(/_/g," ")}: {v}%</span>
-                ))}
-              </div>
-              <div className="msec">Score performance</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:10}}>
-                {[["Struttura",sel.score_struttura],["Sapore",sel.score_sapore],["Lievitazione",sel.score_lievitazione],["Shelf life",sel.score_shelflife]].map(([l,v])=>(
-                  <div key={l} style={{background:"var(--n0)",borderRadius:8,padding:10,textAlign:"center"}}>
-                    <div style={{fontSize:20,fontWeight:700,color:+v>=80?"var(--g7)":+v>=65?"var(--a6)":"var(--r8)"}}>{parseInt(v)||v}</div>
-                    <div style={{fontSize:10,color:"var(--n5)",marginTop:2}}>{l}</div>
+            </div>
+
+            <div className="card">
+              <div className="card-title">Additivi selezionati</div>
+              {selectedAdd.length === 0 && <p style={{fontSize:13,color:'var(--n5)'}}>Nessun additivo selezionato</p>}
+              {selectedAdd.map(a => (
+                <div key={a.id} className="dose-row">
+                  <div style={{flex:1}}>
+                    <div className="dose-name">{a.nome}</div>
+                    <div className="dose-fam">{a.categoria} · busta {a.busta||'?'}</div>
+                  </div>
+                  <input type="number" className="input dose-input" min="0" max="10" step="0.001"
+                    value={doses[`a_${a.id}`]||0}
+                    onChange={e=>setDoses(d=>({...d,[`a_${a.id}`]:e.target.value}))} />
+                  <span className="dose-unit">%</span>
+                  <button onClick={()=>removeAdditivo(a.id)} style={{color:'var(--n4)',fontSize:16,padding:'0 4px'}}>×</button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="card" style={{marginBottom:16}}>
+              <div className="card-title">Aggiungi ingrediente</div>
+              <SearchInput value={qIng} onChange={setQIng} placeholder="Cerca ingrediente..." />
+              <div style={{maxHeight:240,overflowY:'auto'}}>
+                {filteredIng.map(i => (
+                  <div key={i.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 4px',borderBottom:'1px solid var(--n2)',cursor:'pointer'}}
+                    onClick={()=>addIngrediente(i)}>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:500}}>{i.nome}</div>
+                      <div style={{fontSize:11,color:'var(--n5)'}}>{i.famiglia}</div>
+                    </div>
+                    <span style={{color:'var(--g6)',fontSize:18}}>+</span>
                   </div>
                 ))}
               </div>
-              <div className="msec">Note di processo</div>
-              <div style={{background:"var(--n0)",borderRadius:8,padding:"11px 13px",fontSize:13,color:"var(--n7)",lineHeight:1.6}}>{sel.note_processo}</div>
+            </div>
+
+            <div className="card">
+              <div className="card-title">Aggiungi additivo</div>
+              <SearchInput value={qAdd} onChange={setQAdd} placeholder="Cerca additivo..." />
+              <div style={{maxHeight:200,overflowY:'auto'}}>
+                {filteredAdd.map(a => (
+                  <div key={a.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 4px',borderBottom:'1px solid var(--n2)',cursor:'pointer'}}
+                    onClick={()=>addAdditivo(a)}>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:500}}>{a.nome}</div>
+                      <div style={{fontSize:11,color:'var(--n5)'}}>{a.categoria}</div>
+                    </div>
+                    <span style={{color:'var(--g6)',fontSize:18}}>+</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {tab === 'calcoli' && (
+        <div className="grid-2">
+          <div className="card">
+            <div className="card-title">IG composito blend</div>
+            {!igComposito ? <p style={{fontSize:13,color:'var(--n5)'}}>Aggiungi ingredienti per calcolare l'IG</p> : (
+              <div>
+                <div style={{display:'flex',gap:20,marginBottom:16}}>
+                  {igComposito.crudo !== null && (
+                    <div className="stat">
+                      <div className="stat-label">IG crudo</div>
+                      <div style={{fontSize:28,fontWeight:600,fontFamily:'var(--mono)',color:igComposito.crudo>55?'var(--r8)':igComposito.crudo>35?'var(--a6)':'var(--g8)'}}>
+                        {igComposito.crudo}
+                      </div>
+                    </div>
+                  )}
+                  {igComposito.cotto !== null && (
+                    <div className="stat">
+                      <div className="stat-label">IG da cotto ⚠</div>
+                      <div style={{fontSize:28,fontWeight:600,fontFamily:'var(--mono)',color:igComposito.cotto>55?'var(--r8)':igComposito.cotto>35?'var(--a6)':'var(--g8)'}}>
+                        {igComposito.cotto}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="ig-bar" style={{height:10,marginBottom:6}}>
+                  <div className="ig-fill" style={{
+                    width:`${Math.min(100,igComposito.cotto||igComposito.crudo||0)}%`,
+                    background: (igComposito.cotto||0) > 55 ? 'var(--r6)' : (igComposito.cotto||0) > 35 ? 'var(--a4)' : 'var(--g6)'
+                  }}/>
+                </div>
+                <p style={{fontSize:11,color:'var(--n5)'}}>
+                  ⚠ Il valore IG da cotto è quello rilevante per i claim — gli amidi gelatinizzano aumentando significativamente l'IG rispetto al crudo.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="card">
+            <div className="card-title">Claim UE 432/2012 comunicabili</div>
+            {claimAggregati.length === 0 ?
+              <p style={{fontSize:13,color:'var(--n5)'}}>Nessun claim EU per gli ingredienti selezionati a dose ≥5%</p> :
+              claimAggregati.map((c,i) => (
+                <div key={i} style={{marginBottom:10,paddingBottom:10,borderBottom:'1px solid var(--n2)'}}>
+                  <div style={{fontSize:12,fontWeight:600,color:'var(--n7)',marginBottom:3}}>{c.nome}</div>
+                  <div style={{fontSize:12,color:'var(--b8)',lineHeight:1.5}}>{c.claim}</div>
+                </div>
+              ))
+            }
+          </div>
+
+          <div className="card">
+            <div className="card-title">Calcolo TDT — Temperatura acqua</div>
+            <TDTCalculator />
+          </div>
+        </div>
+      )}
+
+      {tab === 'interazioni' && (
+        <div>
+          {interazioniCritiche.length === 0 ?
+            <Alert type="green">Nessuna interazione critica (punteggio ≤2) rilevata tra gli ingredienti e additivi selezionati.</Alert> :
+            <div>
+              <Alert type="amber">Rilevate {interazioniCritiche.length} interazioni critiche. Verificare prima di procedere con le prove.</Alert>
+              {interazioniCritiche.map((r,i) => (
+                <div key={i} className="card" style={{marginBottom:8}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
+                    <Badge cls="badge-red">Punteggio {r.punteggio}</Badge>
+                    <Badge cls={r.tipo==='enzima'?'badge-blue':'badge-amber'}>{r.tipo}</Badge>
+                    <span style={{fontSize:13,fontWeight:500}}>{r.a} × {r.b}</span>
+                  </div>
+                  <p style={{fontSize:13,color:'var(--n6)'}}>{r.note}</p>
+                </div>
+              ))}
+            </div>
+          }
         </div>
       )}
     </div>
   );
 }
 
-const MX_ING=[
-  {id:"1",n:"Ceci"},{id:"5",n:"Piselli"},{id:"2",n:"Lent.rosse"},{id:"16",n:"Lupino"},
-  {id:"22",n:"Saraceno"},{id:"23",n:"Quinoa"},{id:"26",n:"Amaranto"},
-  {id:"31",n:"Tapioca"},{id:"30",n:"Fecola"},{id:"41",n:"Mandorle"},{id:"43",n:"Cocco"},
-  {id:"51",n:"Chia"},{id:"50",n:"Lino"},{id:"59",n:"Psyllium"},{id:"60",n:"Xantano"}
-];
+function TDTCalculator() {
+  const [tAmb, setTAmb] = useState('');
+  const [tFar, setTFar] = useState('');
+  const [imp, setImp]   = useState('spirale');
+  const frictionMap = { spirale:10, forcella:12, bracci:15 };
+  const F = frictionMap[imp];
+  const tTarget = 23;
+  const tAcqua = tAmb && tFar ? (3*tTarget) - (Number(tAmb)+Number(tFar)+F) : null;
+  const alert = tAcqua !== null ? tAcqua < 4 ? 'red' : tAcqua > 20 ? 'amber' : 'green' : null;
 
-function MatriciPage({data,loading,scriptUrl,onRefresh}){
-  const [mt,setMt]=useState("reol"),[det,setDet]=useState(null);
-  const getMx=()=>mt==="reol"?data.reol:mt==="chim"?data.chim:data.sens;
-  const normId=v=>String(v||"").trim().replace(/\.0$/,"").replace(/\r/,"");
-  const getScore=(a,b)=>{const mx=getMx();const na=normId(a),nb=normId(b);const r=mx.find(x=>{ const xa=normId(x.id_a),xb=normId(x.id_b);return(xa===na&&xb===nb)||(xa===nb&&xb===na);});return r?parseInt(r.punteggio)||3:3;};
-  const getInfo=(a,b)=>{const mx=getMx();const na=normId(a),nb=normId(b);return mx.find(x=>{const xa=normId(x.id_a),xb=normId(x.id_b);return(xa===na&&xb===nb)||(xa===nb&&xb===na);})||null;};
-  const labels={reol:"Reologica",chim:"Chimica",sens:"Sensoriale"};
-  return(
-    <div className="page">
-      <div className="ph"><div className="pt">Matrici di compatibilità</div><div className="ps">Clicca su una cella per il dettaglio · ● = nota disponibile · Dati sperimentali aggiornano i punteggi teorici</div></div>
-      <div className="itabs">{["reol","chim","sens"].map(t=><button key={t} className={`itab${mt===t?" on":""}`} onClick={()=>setMt(t)}>{labels[t]}</button>)}</div>
-      <div className="mleg">
-        {[5,4,3,2,1].map(s=><div key={s} className="mleg-i"><div className={`mleg-d ${SC_CLS[s]}`}/><span>{s} — {SC_LBL[s]}</span></div>)}
+  return (
+    <div>
+      <div className="doe-grid">
+        <div className="input-group">
+          <label className="input-label">T ambiente (°C)</label>
+          <input className="input" type="number" value={tAmb} onChange={e=>setTAmb(e.target.value)} placeholder="es. 22" />
+        </div>
+        <div className="input-group">
+          <label className="input-label">T farine (°C)</label>
+          <input className="input" type="number" value={tFar} onChange={e=>setTFar(e.target.value)} placeholder="es. 21" />
+        </div>
       </div>
-      {loading?<div className="empty"><div className="spin"/></div>:(
-        <div className="card"><div className="cb">
-          <div className="mwrap">
-            <table className="mx">
-              <thead><tr><th className="rh"/>{MX_ING.map(i=><th key={i.id} title={i.n}>{i.n}</th>)}</tr></thead>
+      <div className="input-group">
+        <label className="input-label">Tipo impastatrice</label>
+        <select className="input" value={imp} onChange={e=>setImp(e.target.value)}>
+          <option value="spirale">Spirale (F=10°C)</option>
+          <option value="forcella">Forcella (F=12°C)</option>
+          <option value="bracci">Bracci tuffanti (F=15°C)</option>
+        </select>
+      </div>
+      {tAcqua !== null && (
+        <div style={{marginTop:8}}>
+          <div style={{fontSize:12,color:'var(--n5)',marginBottom:4,fontFamily:'var(--mono)'}}>
+            T = (3×{tTarget}) - ({tAmb} + {tFar} + {F}) =
+          </div>
+          <div style={{fontSize:28,fontWeight:600,fontFamily:'var(--mono)',
+            color:alert==='red'?'var(--r8)':alert==='amber'?'var(--a6)':'var(--g8)'}}>
+            {tAcqua.toFixed(1)}°C
+          </div>
+          {alert==='red' && <Alert type="red">Usare acqua ghiacciata o scaglie di ghiaccio.</Alert>}
+          {alert==='amber' && <Alert type="amber">Verificare condizioni — T elevata.</Alert>}
+          {alert==='green' && <Alert type="green">Temperatura ottimale. T target impasto: 22-24°C.</Alert>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── MATRICI ───────────────────────────────────────────────────
+function Matrici({ data }) {
+  const { matrici_reol, matrici_chim, matrici_sens, matrici_additivi, ingredienti, additivi } = data;
+  const [tab, setTab] = useState('reol');
+  const [sel, setSel] = useState(null);
+
+  const ingMap = Object.fromEntries(ingredienti.map(i=>[String(i.id),i.nome]));
+  const addMap = Object.fromEntries(additivi.map(a=>[String(a.id),a.nome]));
+
+  const matData = { reol:matrici_reol, chim:matrici_chim, sens:matrici_sens, additivi:matrici_additivi };
+  const current = matData[tab] || [];
+  const isAdditivi = tab === 'additivi';
+
+  return (
+    <div>
+      <h2 style={{fontSize:16,fontWeight:600,marginBottom:16}}>Matrici di compatibilità</h2>
+      <div className="tabs">
+        {[['reol','Reologica'],['chim','Chimica'],['sens','Sensoriale'],['additivi','Additivi×Ingredienti']].map(([k,l]) => (
+          <div key={k} className={`tab${tab===k?' active':''}`} onClick={()=>{setTab(k);setSel(null)}}>
+            {l} <span style={{fontSize:11,color:'var(--n5)',fontFamily:'var(--mono)'}}>({matData[k]?.length||0})</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="card" style={{padding:0}}>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>{isAdditivi?'Additivo':'Ingrediente A'}</th>
+                <th>Ingrediente B</th>
+                {isAdditivi && <th>Tipo</th>}
+                <th>Punteggio</th>
+                <th>Note</th>
+                <th>Fonte</th>
+                <th>Stato</th>
+              </tr>
+            </thead>
+            <tbody>
+              {current.map((r,i) => {
+                const nomeA = isAdditivi ? (addMap[r.additivo_id]||r.additivo_id) : (ingMap[r.id_a]||r.id_a);
+                const nomeB = ingMap[isAdditivi?r.ingrediente_id:r.id_b] || (isAdditivi?r.ingrediente_id:r.id_b);
+                const p = r.punteggio;
+                return (
+                  <tr key={i} style={{cursor:'pointer'}} onClick={()=>setSel(sel===i?null:i)}>
+                    <td style={{fontWeight:500}}>{nomeA}</td>
+                    <td style={{fontWeight:500}}>{nomeB}</td>
+                    {isAdditivi && <td><Badge cls={r.tipo_interazione==='sinergia'?'badge-green':r.tipo_interazione==='attenzione'||r.tipo_interazione==='competizione'?'badge-amber':'badge-red'}>{r.tipo_interazione}</Badge></td>}
+                    <td>
+                      <div className={`heatmap-cell hm-${p||0}`} style={{width:28,height:28}}>
+                        {p||'—'}
+                      </div>
+                    </td>
+                    <td style={{fontSize:12,color:'var(--n6)',maxWidth:200}}>
+                      {sel===i ? r.note : (r.note||'').substring(0,60)+(r.note?.length>60?'…':'')}
+                    </td>
+                    <td style={{fontSize:11,color:'var(--n5)',fontStyle:'italic',maxWidth:120}}>{(r.fonte||'').substring(0,40)}</td>
+                    <td><Badge cls={statoColors[r.stato]}>{r.stato}</Badge></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MARKETING ─────────────────────────────────────────────────
+function Marketing({ data }) {
+  const { ingredienti } = data;
+  const mktIng = ingredienti.filter(i => i.potenziale_marketing).sort((a,b) => {
+    const ord = {alto:0,medio:1,basso:2};
+    return (ord[a.potenziale_marketing]||3)-(ord[b.potenziale_marketing]||3);
+  });
+  const [sel, setSel] = useState(null);
+
+  return (
+    <div>
+      <h2 style={{fontSize:16,fontWeight:600,marginBottom:4}}>Marketing layer</h2>
+      <p style={{fontSize:13,color:'var(--n5)',marginBottom:16}}>
+        {mktIng.filter(i=>i.potenziale_marketing==='alto').length} ingredienti ad alto potenziale ·{' '}
+        {ingredienti.filter(i=>i.novita_mercato==='si').length} novità assolute per la GDO italiana ·{' '}
+        {ingredienti.filter(i=>i.claim_salutistico_eu?.includes('432/2012')).length} claim EU approvati
+      </p>
+
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:12}}>
+        {mktIng.map(i => (
+          <div key={i.id} className={`mkt-card ${i.potenziale_marketing}`}
+            onClick={()=>setSel(sel?.id===i.id?null:i)}>
+            <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:8}}>
+              <div>
+                <div style={{fontWeight:600,fontSize:14}}>{i.nome}</div>
+                <div style={{fontSize:11,color:'var(--n5)',fontStyle:'italic'}}>{i.nome_latino}</div>
+              </div>
+              <Badge cls={i.potenziale_marketing==='alto'?'badge-green':i.potenziale_marketing==='medio'?'badge-amber':'badge-gray'}>
+                {i.potenziale_marketing}
+              </Badge>
+            </div>
+
+            {i.novita_mercato==='si' && (
+              <div style={{marginBottom:6}}>
+                <span className="claim-tag">🆕 Novità GDO</span>
+              </div>
+            )}
+
+            {i.posizionamento_claim && (
+              <div style={{marginBottom:8}}>
+                {i.posizionamento_claim.split(',').map(p => (
+                  <span key={p} className="claim-tag">{p.trim()}</span>
+                ))}
+              </div>
+            )}
+
+            {sel?.id === i.id && (
+              <div style={{marginTop:10,paddingTop:10,borderTop:'1px solid var(--n2)'}}>
+                {i.storia_ingrediente && (
+                  <p style={{fontSize:12,color:'var(--n7)',lineHeight:1.6,marginBottom:8}}>{i.storia_ingrediente}</p>
+                )}
+                {i.claim_salutistico_eu && (
+                  <div style={{background:'var(--b0)',padding:'8px 10px',borderRadius:6,marginBottom:6}}>
+                    <div style={{fontSize:10,fontWeight:600,color:'var(--b8)',marginBottom:3}}>CLAIM UE 432/2012</div>
+                    <p style={{fontSize:12,color:'var(--b8)',lineHeight:1.5}}>{i.claim_salutistico_eu}</p>
+                  </div>
+                )}
+                {i.certificazioni_possibili && (
+                  <div style={{fontSize:12,color:'var(--n6)'}}>
+                    <strong>Certificazioni:</strong> {i.certificazioni_possibili}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── PROVE DOE ─────────────────────────────────────────────────
+function ProveDoE({ data, onSave }) {
+  const { prove_doe } = data;
+  const [tab, setTab] = useState('lista');
+  const [form, setForm] = useState({
+    id: `ESPL-${String(Date.now()).slice(-4)}`,
+    stato: 'esplorativa',
+    blend_id: 'B01',
+    numero_prova: '',
+    data: new Date().toISOString().split('T')[0],
+    operatore: '',
+    luogo: '',
+    tipo_impastatrice: 'spirale',
+    friction_factor: 10,
+    t_ambiente_c: '',
+    t_farine_c: '',
+    t_acqua_calcolata_c: '',
+    t_acqua_usata_c: '',
+    t_impasto_uscita_c: '',
+    ph_impasto: '',
+    idratazione_pct: '',
+    ceci_pct: '',
+    quinoa_pct: 10,
+    psyllium_pct: 4,
+    lm_pct: 15,
+    fitasi_usata: false,
+    gox_usata: false,
+    t_apretto_c: '',
+    durata_apretto_min: '',
+    volume_aumento_apretto_pct: '',
+    t_interna_fine_c: '',
+    aw_prodotto: '',
+    ph_mollica: '',
+    sapore_1_9: '',
+    texture_1_9: '',
+    gommosita_1_9: '',
+    soddisfazione_1_9: '',
+    note_sensoriali: '',
+    note_generali: '',
+    esito_complessivo: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved]   = useState(false);
+  const [errMsg, setErrMsg] = useState('');
+
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+
+  // Calcolo TDT automatico
+  useEffect(() => {
+    if (form.t_ambiente_c && form.t_farine_c) {
+      const F = form.tipo_impastatrice==='spirale'?10:form.tipo_impastatrice==='forcella'?12:15;
+      const tAcqua = (3*23) - (Number(form.t_ambiente_c)+Number(form.t_farine_c)+F);
+      set('t_acqua_calcolata_c', tAcqua.toFixed(1));
+      set('friction_factor', F);
+    }
+  }, [form.t_ambiente_c, form.t_farine_c, form.tipo_impastatrice]);
+
+  const handleSave = async () => {
+    setSaving(true); setErrMsg('');
+    try {
+      const res = await fetch(`${API}?action=save_doe`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(form),
+      });
+      const json = await res.json();
+      if (json.status === 'ok') {
+        setSaved(true);
+        if (onSave) onSave();
+        setTimeout(()=>setSaved(false), 3000);
+      } else {
+        setErrMsg(json.message||'Errore salvataggio');
+      }
+    } catch(e) {
+      setErrMsg(e.message);
+    }
+    setSaving(false);
+  };
+
+  const tAcquaNum = Number(form.t_acqua_calcolata_c);
+  const tImpasto  = Number(form.t_impasto_uscita_c);
+  const awNum     = Number(form.aw_prodotto);
+
+  return (
+    <div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+        <h2 style={{fontSize:16,fontWeight:600}}>Prove DoE</h2>
+      </div>
+
+      <div className="tabs">
+        <div className={`tab${tab==='lista'?' active':''}`} onClick={()=>setTab('lista')}>
+          Lista prove ({prove_doe.length})
+        </div>
+        <div className={`tab${tab==='nuova'?' active':''}`} onClick={()=>setTab('nuova')}>
+          Nuova prova
+        </div>
+      </div>
+
+      {tab === 'lista' && (
+        <div className="card" style={{padding:0}}>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th><th>Stato</th><th>Data</th><th>Operatore</th>
+                  <th>Ceci%</th><th>Idr%</th><th>T app.</th>
+                  <th>T int.</th><th>aw</th><th>Sapore</th><th>Esito</th>
+                </tr>
+              </thead>
               <tbody>
-                {MX_ING.map(row=>(
-                  <tr key={row.id}>
-                    <th className="rh">{row.n}</th>
-                    {MX_ING.map(col=>{
-                      if(col.id===row.id)return<td key={col.id} className="s0">—</td>;
-                      const s=getScore(row.id,col.id);const info=getInfo(row.id,col.id);
-                      return<td key={col.id} className={SC_CLS[s]} title={`${row.n} × ${col.n}`} onClick={()=>setDet({a:row,b:col,s,info})}>{info?"●":s}</td>;
-                    })}
+                {prove_doe.length === 0 ? (
+                  <tr><td colSpan={11} style={{textAlign:'center',color:'var(--n5)',padding:20}}>
+                    Nessuna prova registrata
+                  </td></tr>
+                ) : prove_doe.map((p,i) => (
+                  <tr key={i}>
+                    <td className="td-mono" style={{fontWeight:500}}>{p.id}</td>
+                    <td><Badge cls={p.stato==='doe_formale'?'badge-blue':p.stato==='annullata'?'badge-red':'badge-gray'}>{p.stato}</Badge></td>
+                    <td className="td-mono">{p.data||'—'}</td>
+                    <td>{p.operatore||'—'}</td>
+                    <td className="td-mono">{p.ceci_pct||'—'}</td>
+                    <td className="td-mono">{p.idratazione_pct||'—'}</td>
+                    <td className="td-mono">{p.t_apretto_c||'—'}</td>
+                    <td className="td-mono" style={{color:p.t_interna_fine_c<94?'var(--r6)':p.t_interna_fine_c>97?'var(--a6)':'var(--g7)'}}>
+                      {p.t_interna_fine_c||'—'}
+                    </td>
+                    <td className="td-mono" style={{color:p.aw_prodotto>0.97?'var(--r6)':p.aw_prodotto&&p.aw_prodotto<0.94?'var(--a6)':'var(--g7)'}}>
+                      {p.aw_prodotto||'—'}
+                    </td>
+                    <td className="td-mono">{p.sapore_1_9||'—'}</td>
+                    <td><Badge cls={p.esito_complessivo==='POSITIVO'?'badge-green':p.esito_complessivo==='NEGATIVO'?'badge-red':'badge-gray'}>{p.esito_complessivo||'—'}</Badge></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {det&&(
-            <div className="mdet">
-              <div style={{fontWeight:600,fontSize:13,marginBottom:6}}>
-                {det.a.n} × {det.b.n}
-                <span className={SC_CLS[det.s]} style={{marginLeft:8,padding:"1px 7px",borderRadius:8,fontSize:11}}>{det.s} — {SC_LBL[det.s]}</span>
-                {det.info&&<span className={`tag t-${det.info.stato}`} style={{marginLeft:4}}>{det.info.stato}</span>}
-              </div>
-              {det.info?det.info.note:"Punteggio neutro (3) per default — nessuna nota specifica. Da validare sperimentalmente."}
-              {det.info?.fonte&&<div style={{fontSize:10,color:"var(--n5)",marginTop:4}}>Fonte: {det.info.fonte}</div>}
-            </div>
-          )}
-        </div></div>
-      )}
-    </div>
-  );
-}
-
-const DOE_PLAN=[{n:1,ceci:25,idr:79,t:26},{n:2,ceci:35,idr:79,t:26},{n:3,ceci:25,idr:82,t:26},{n:4,ceci:35,idr:82,t:26},{n:5,ceci:25,idr:79,t:28},{n:6,ceci:35,idr:79,t:28},{n:7,ceci:25,idr:82,t:28},{n:8,ceci:35,idr:82,t:28}];
-
-function DoePage({data,loading,scriptUrl,onRefresh}){
-  const [comp,setComp]=useState(null),[form,setForm]=useState({}),[saving,setSaving]=useState(false);
-  const getP=n=>data.prove.find(p=>p.numero_prova===String(n));
-  const open=n=>{const p=getP(n);setForm(p?{...p}:{numero_prova:String(n),blend_id:"B01"});setComp(n);};
-  const calcAcqua=()=>{
-    const tw=(3*23)-(parseFloat(form.t_ambiente_c)||20)-(parseFloat(form.t_farine_c)||19)-(parseFloat(form.friction_factor)||12);
-    setForm(f=>({...f,t_acqua_calcolata_c:tw.toFixed(1)}));
-  };
-  const save=async()=>{
-    setSaving(true);
-    try{
-      const row=[
-        form.id||`DOE-00${form.numero_prova}`,"B01",form.numero_prova,form.data||"",
-        form.operatore||"",form.luogo||"",form.tipo_impastatrice||"",form.modello_impastatrice||"",
-        form.tipo_forno||"",form.modello_forno||"",form.tipo_cella||"",form.strumenti||"",
-        form.t_ambiente_c||"",form.ur_ambiente||"",form.t_farine_c||"",form.friction_factor||"",
-        form.t_acqua_calcolata_c||"",form.t_acqua_usata||"",form.t_impasto_uscita||"",form.ph_impasto||"",
-        form.idratazione_pct||"",form.ceci_pct||"",form.quinoa_pct||"10",form.psyllium_pct||"4",form.lm_pct||"15",
-        form.note_impasto||"",
-        form.t_punt_c||"",form.ur_punt||"",form.dur_punt||"",form.vol_punt||"",
-        form.t_app_c||"",form.ur_app||"",form.dur_app||"",form.vol_app||"",
-        "220",form.dur_f1||"","185",form.dur_f2||"","175",form.dur_f3||"",form.t_interna||"",
-        form.vol_spec||"",form.durezza||"",form.col_l||"",form.col_a||"",form.col_b||"",
-        form.ph_mollica||"",form.aw||"",form.umidita||"",
-        form.sapore||"",form.texture||"",form.croc||"",form.retro||"",form.sodd||"",
-        form.note_sens||"",form.foto||"",form.note_gen||"",form.esito||""
-      ];
-      await writeSheet(scriptUrl,{action:"append",sheet:"Prove_DoE",row});
-      await onRefresh(); setComp(null);
-    }catch(e){alert("Errore: "+e.message);}
-    setSaving(false);
-  };
-  const F=({l,id,type="text",ph=""})=>(
-    <div className="ff">
-      <label className="flbl">{l}</label>
-      <input className="finput" type={type} placeholder={ph} value={form[id]||""} onChange={e=>setForm(f=>({...f,[id]:e.target.value}))}/>
-    </div>
-  );
-  return(
-    <div className="page">
-      <div className="ph"><div className="pt">Piano sperimentale DoE</div><div className="ps">8 prove · Fattoriale completo 2³ · Psyllium 4% e LM 15% fissi</div></div>
-      <div className="info-box">Esegui le prove in ordine casuale per minimizzare l'errore sperimentale da variabili ambientali non controllate. Compila la scheda immediatamente dopo ogni prova.</div>
-      {loading?<div className="empty"><div className="spin"/></div>:(
-        <div className="dgrid2">
-          {DOE_PLAN.map(piano=>{
-            const p=getP(piano.n); const done=p&&p.t_interna_fine_c;
-            return(
-              <div key={piano.n} className="doecard">
-                <div className="doehead">
-                  <span className="doeid">Prova {String(piano.n).padStart(2,"0")}</span>
-                  <span className={`doest ${done?"dst-c":"dst-v"}`}>{done?"Completata":"Da eseguire"}</span>
-                </div>
-                <div className="doebody">
-                  <div className="dparams">
-                    <div className="dparam"><div className="dparam-l">Ceci</div><div className="dparam-v">{piano.ceci}%</div></div>
-                    <div className="dparam"><div className="dparam-l">Idrataz.</div><div className="dparam-v">{piano.idr}%</div></div>
-                    <div className="dparam"><div className="dparam-l">T liev.</div><div className="dparam-v">{piano.t}°C</div></div>
-                  </div>
-                  <div className="dfixed">Fissi: Psyllium 4% · LM 15% · Quinoa 10%</div>
-                  {done&&(
-                    <div className="res-grid">
-                      {[["Vol.spec.",p.volume_specifico_ml_g,"ml/g"],["T int.",p.t_interna_fine_c,"°C"],["aw",p.aw_prodotto,""]].map(([l,v,u])=>(
-                        <div key={l} className="res-s"><div className="res-v">{v||"—"}{u}</div><div className="res-l">{l}</div></div>
-                      ))}
-                    </div>
-                  )}
-                  <button className={`btncomp${done?" done":""}`} onClick={()=>open(piano.n)}>
-                    {done?"Modifica dati prova":"Compila scheda prova"}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
         </div>
       )}
-      {comp&&(
-        <div className="mover" onClick={e=>e.target===e.currentTarget&&setComp(null)}>
-          <div className="modal">
-            <div className="mhead"><div className="mtitle">Prova {String(comp).padStart(2,"0")} — Scheda raccolta dati</div><button className="mclose" onClick={()=>setComp(null)}>×</button></div>
-            <div className="mbody">
-              <div className="msec">Contesto e attrezzatura</div>
-              <div className="fgrid">
-                <F l="Data" id="data" type="date"/>
-                <F l="Operatore" id="operatore"/>
-                <F l="Luogo" id="luogo" ph="es. Cucina chef, Lab XY"/>
-                <F l="Tipo impastatrice" id="tipo_impastatrice" ph="spirale / forcella / bracci"/>
-                <F l="Modello impastatrice" id="modello_impastatrice"/>
-                <F l="Tipo forno" id="tipo_forno" ph="rotativo / platea / ventilato"/>
-                <F l="Modello forno" id="modello_forno"/>
-                <F l="Cella lievitazione" id="tipo_cella" ph="es. Häussler TX"/>
-                <div className="ff full">
-                  <label className="flbl">Strumenti di misura utilizzati</label>
-                  <input className="finput" placeholder="es. termometro Testo 104, pH-metro Hanna, misuratore aw Rotronic..." value={form.strumenti||""} onChange={e=>setForm(f=>({...f,strumenti:e.target.value}))}/>
-                </div>
+
+      {tab === 'nuova' && (
+        <div>
+          {saved && <Alert type="green">✓ Prova salvata correttamente nel database.</Alert>}
+          {errMsg && <Alert type="red">Errore: {errMsg}</Alert>}
+
+          <div className="card doe-section">
+            <div className="doe-section-title">Identificazione</div>
+            <div className="doe-grid">
+              <div className="input-group">
+                <label className="input-label">ID prova</label>
+                <input className="input" value={form.id} onChange={e=>set('id',e.target.value)} placeholder="es. ESPL-001 o DOE-001"/>
               </div>
-              <div className="msec">Condizioni ambientali e calcolo T acqua</div>
-              <div className="fgrid">
-                <F l="T ambiente (°C)" id="t_ambiente_c" type="number"/>
-                <F l="UR ambiente (%)" id="ur_ambiente" type="number"/>
-                <F l="T farine (°C)" id="t_farine_c" type="number"/>
-                <div className="ff">
-                  <label className="flbl">Friction factor impastatrice</label>
-                  <div style={{display:"flex",gap:5}}>
-                    <input className="finput" type="number" placeholder="10–15" value={form.friction_factor||""} onChange={e=>setForm(f=>({...f,friction_factor:e.target.value}))} style={{flex:1}}/>
-                    <button onClick={calcAcqua} style={{padding:"0 10px",border:"1px solid var(--g6)",borderRadius:7,background:"var(--g0)",color:"var(--g7)",fontSize:11,cursor:"pointer",whiteSpace:"nowrap"}}>Calcola</button>
-                  </div>
-                </div>
-                <F l="T acqua calcolata (°C)" id="t_acqua_calcolata_c" type="number"/>
-                <F l="T acqua usata (°C)" id="t_acqua_usata" type="number"/>
-                <F l="T impasto uscita (°C) ← target 22–24" id="t_impasto_uscita" type="number"/>
-                <F l="pH impasto" id="ph_impasto" type="number"/>
-                <F l="Idratazione effettiva (%)" id="idratazione_pct" type="number" ph={String(DOE_PLAN[comp-1]?.idr)}/>
-                <div className="ff full">
-                  <label className="flbl">Note impasto (aspetto, comportamento, anomalie)</label>
-                  <textarea className="finput" rows={2} value={form.note_impasto||""} onChange={e=>setForm(f=>({...f,note_impasto:e.target.value}))}/>
-                </div>
+              <div className="input-group">
+                <label className="input-label">Stato</label>
+                <select className="input" value={form.stato} onChange={e=>set('stato',e.target.value)}>
+                  <option value="esplorativa">Esplorativa</option>
+                  <option value="doe_formale">DoE formale</option>
+                  <option value="annullata">Annullata</option>
+                </select>
               </div>
-              <div className="msec">Lievitazione</div>
-              <div className="fgrid">
-                <F l="T puntatura (°C)" id="t_punt_c" type="number"/>
-                <F l="UR puntatura (%)" id="ur_punt" type="number"/>
-                <F l="Durata puntatura (min)" id="dur_punt" type="number"/>
-                <F l="Volume aumento puntatura (%)" id="vol_punt" type="number"/>
-                <F l="T apretto (°C)" id="t_app_c" type="number"/>
-                <F l="UR apretto (%)" id="ur_app" type="number"/>
-                <F l="Durata apretto (min)" id="dur_app" type="number"/>
-                <F l="Volume aumento apretto (%)" id="vol_app" type="number"/>
+              <div className="input-group">
+                <label className="input-label">Data</label>
+                <input className="input" type="date" value={form.data} onChange={e=>set('data',e.target.value)}/>
               </div>
-              <div className="msec">Cottura — profilo 3 fasi (T di default preimpostate)</div>
-              <div className="fgrid">
-                <F l="Durata fase 1 — 220°C vapore (min)" id="dur_f1" type="number" ph="12–15"/>
-                <F l="Durata fase 2 — 185°C (min)" id="dur_f2" type="number" ph="20–25"/>
-                <F l="Durata fase 3 — 175°C aperto (min)" id="dur_f3" type="number" ph="10–15"/>
-                <F l="T interna fine cottura (°C) ← CCP" id="t_interna" type="number" ph="94–97"/>
+              <div className="input-group">
+                <label className="input-label">Operatore</label>
+                <input className="input" value={form.operatore} onChange={e=>set('operatore',e.target.value)} placeholder="Nome operatore"/>
               </div>
-              <div className="msec">Misurazioni prodotto finito</div>
-              <div className="fgrid">
-                <F l="Volume specifico (ml/g)" id="vol_spec" type="number"/>
-                <F l="Durezza mollica (N)" id="durezza" type="number"/>
-                <F l="Colore crosta L*" id="col_l" type="number"/>
-                <F l="Colore crosta a*" id="col_a" type="number"/>
-                <F l="Colore crosta b*" id="col_b" type="number"/>
-                <F l="pH mollica" id="ph_mollica" type="number"/>
-                <F l="aw prodotto" id="aw" type="number" ph="0.94–0.96"/>
-                <F l="Umidità (%)" id="umidita" type="number" ph="38–42"/>
+            </div>
+          </div>
+
+          <div className="card doe-section">
+            <div className="doe-section-title">Variabili DoE</div>
+            <div className="doe-grid">
+              <div className="input-group">
+                <label className="input-label">Ceci % (variabile)</label>
+                <select className="input" value={form.ceci_pct} onChange={e=>set('ceci_pct',e.target.value)}>
+                  <option value="">— scegli —</option>
+                  <option value="25">25% (livello basso)</option>
+                  <option value="35">35% (livello alto)</option>
+                </select>
               </div>
-              <div className="msec">Valutazione sensoriale — scala 1–9</div>
-              <div className="fgrid">
-                <F l="Sapore" id="sapore" type="number" ph="1–9"/>
-                <F l="Texture / Masticabilità" id="texture" type="number" ph="1–9"/>
-                <F l="Croccantezza crosta" id="croc" type="number" ph="1–9"/>
-                <F l="Retrogusto" id="retro" type="number" ph="1–9"/>
-                <F l="Soddisfazione complessiva" id="sodd" type="number" ph="1–9"/>
-                <div className="ff full">
-                  <label className="flbl">Note sensoriali libere</label>
-                  <textarea className="finput" rows={2} value={form.note_sens||""} onChange={e=>setForm(f=>({...f,note_sens:e.target.value}))}/>
-                </div>
+              <div className="input-group">
+                <label className="input-label">Idratazione % (variabile)</label>
+                <select className="input" value={form.idratazione_pct} onChange={e=>set('idratazione_pct',e.target.value)}>
+                  <option value="">— scegli —</option>
+                  <option value="79">79% (livello basso)</option>
+                  <option value="82">82% (livello alto)</option>
+                </select>
               </div>
-              <div className="msec">Conclusioni prova</div>
-              <div className="fgrid">
-                <F l="URL foto prodotto" id="foto" ph="https://..."/>
-                <div className="ff">
-                  <label className="flbl">Esito complessivo</label>
-                  <select className="finput" value={form.esito||""} onChange={e=>setForm(f=>({...f,esito:e.target.value}))}>
-                    <option value="">Seleziona...</option>
-                    <option value="ottimo">Ottimo — da approfondire</option>
-                    <option value="buono">Buono</option>
-                    <option value="sufficiente">Sufficiente</option>
-                    <option value="insufficiente">Insufficiente</option>
-                    <option value="fallito">Fallito — analizzare cause</option>
+              <div className="input-group">
+                <label className="input-label">T lievitazione °C (variabile)</label>
+                <select className="input" value={form.t_apretto_c} onChange={e=>set('t_apretto_c',e.target.value)}>
+                  <option value="">— scegli —</option>
+                  <option value="26">26°C (livello basso)</option>
+                  <option value="28">28°C (livello alto)</option>
+                </select>
+              </div>
+            </div>
+            <div style={{display:'flex',gap:16,marginTop:4}}>
+              <label style={{display:'flex',alignItems:'center',gap:6,fontSize:13,cursor:'pointer'}}>
+                <input type="checkbox" checked={form.fitasi_usata} onChange={e=>set('fitasi_usata',e.target.checked)}/> Fitasi E06 usata
+              </label>
+              <label style={{display:'flex',alignItems:'center',gap:6,fontSize:13,cursor:'pointer'}}>
+                <input type="checkbox" checked={form.gox_usata} onChange={e=>set('gox_usata',e.target.checked)}/> GOX E03 usata
+              </label>
+            </div>
+          </div>
+
+          <div className="card doe-section">
+            <div className="doe-section-title">Impasto — calcolo TDT</div>
+            <div className="doe-grid">
+              <div className="input-group">
+                <label className="input-label">T ambiente (°C)</label>
+                <input className="input" type="number" value={form.t_ambiente_c} onChange={e=>set('t_ambiente_c',e.target.value)}/>
+              </div>
+              <div className="input-group">
+                <label className="input-label">T farine (°C)</label>
+                <input className="input" type="number" value={form.t_farine_c} onChange={e=>set('t_farine_c',e.target.value)}/>
+              </div>
+              <div className="input-group">
+                <label className="input-label">Impastatrice</label>
+                <select className="input" value={form.tipo_impastatrice} onChange={e=>set('tipo_impastatrice',e.target.value)}>
+                  <option value="spirale">Spirale (F=10°C)</option>
+                  <option value="forcella">Forcella (F=12°C)</option>
+                  <option value="bracci">Bracci tuffanti (F=15°C)</option>
+                </select>
+              </div>
+            </div>
+            {form.t_acqua_calcolata_c && (
+              <div className="doe-ccp" style={{marginTop:8,background:tAcquaNum<4?'var(--r0)':'var(--g0)',borderColor:tAcquaNum<4?'var(--r1)':'var(--g1)'}}>
+                <div className="doe-ccp-label" style={{color:tAcquaNum<4?'var(--r8)':'var(--g8)'}}>T acqua calcolata</div>
+                <div className="doe-ccp-value" style={{color:tAcquaNum<4?'var(--r8)':'var(--g8)'}}>{form.t_acqua_calcolata_c}°C</div>
+                {tAcquaNum < 4 && <div style={{fontSize:11,color:'var(--r6)'}}>⚠ Usare acqua ghiacciata</div>}
+              </div>
+            )}
+            <div className="doe-grid" style={{marginTop:8}}>
+              <div className="input-group">
+                <label className="input-label">T acqua usata (°C)</label>
+                <input className="input" type="number" value={form.t_acqua_usata_c} onChange={e=>set('t_acqua_usata_c',e.target.value)}/>
+              </div>
+              <div className="input-group">
+                <label className="input-label">T impasto uscita (°C) — CCP</label>
+                <input className="input" type="number" value={form.t_impasto_uscita_c} onChange={e=>set('t_impasto_uscita_c',e.target.value)}
+                  style={{borderColor:tImpasto>26?'var(--r6)':tImpasto&&tImpasto<=26?'var(--g6)':'var(--n3)'}}/>
+                {tImpasto > 26 && <div className="input-hint" style={{color:'var(--r8)'}}>⚠ CCP: oltre 26°C — LM si attiva incontrollato</div>}
+                {tImpasto > 0 && tImpasto <= 26 && <div className="input-hint" style={{color:'var(--g7)'}}>✓ Nella norma</div>}
+              </div>
+              <div className="input-group">
+                <label className="input-label">pH impasto — CCP</label>
+                <input className="input" type="number" step="0.1" value={form.ph_impasto} onChange={e=>set('ph_impasto',e.target.value)}/>
+                <div className="input-hint">Target: 5.2-5.8</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card doe-section">
+            <div className="doe-section-title">Prodotto finito — CCP</div>
+            <div className="doe-grid">
+              <div className="input-group">
+                <label className="input-label">T interna cottura (°C) — CCP</label>
+                <input className="input" type="number" step="0.1" value={form.t_interna_fine_c} onChange={e=>set('t_interna_fine_c',e.target.value)}
+                  style={{borderColor:Number(form.t_interna_fine_c)<94&&form.t_interna_fine_c?'var(--r6)':Number(form.t_interna_fine_c)>=94?'var(--g6)':'var(--n3)'}}/>
+                <div className="input-hint">Target: 94-97°C</div>
+                {Number(form.t_interna_fine_c) < 94 && form.t_interna_fine_c &&
+                  <div className="input-hint" style={{color:'var(--r8)'}}>⚠ NON confezionare — rimettere in forno</div>}
+              </div>
+              <div className="input-group">
+                <label className="input-label">aw prodotto finito — CCP</label>
+                <input className="input" type="number" step="0.001" value={form.aw_prodotto} onChange={e=>set('aw_prodotto',e.target.value)}
+                  style={{borderColor:awNum>0.97&&awNum?'var(--r6)':awNum>=0.94&&awNum<=0.96?'var(--g6)':'var(--n3)'}}/>
+                <div className="input-hint">Target: 0.94-0.96</div>
+                {awNum > 0.97 && <div className="input-hint" style={{color:'var(--r8)'}}>⚠ NON confezionare — prolungare raffreddamento</div>}
+              </div>
+              <div className="input-group">
+                <label className="input-label">pH mollica</label>
+                <input className="input" type="number" step="0.1" value={form.ph_mollica} onChange={e=>set('ph_mollica',e.target.value)}/>
+                <div className="input-hint">Target: 5.0-5.5</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card doe-section">
+            <div className="doe-section-title">Valutazione sensoriale (1-9)</div>
+            <div className="doe-grid">
+              {[['sapore_1_9','Sapore'],['texture_1_9','Texture'],
+                ['gommosita_1_9','Gommosità (9=per nulla)'],['soddisfazione_1_9','Soddisfazione']].map(([k,l]) => (
+                <div className="input-group" key={k}>
+                  <label className="input-label">{l}</label>
+                  <select className="input" value={form[k]} onChange={e=>set(k,e.target.value)}>
+                    <option value="">—</option>
+                    {[1,2,3,4,5,6,7,8,9].map(n=><option key={n} value={n}>{n}</option>)}
                   </select>
                 </div>
-                <div className="ff full">
-                  <label className="flbl">Note generali</label>
-                  <textarea className="finput" rows={2} value={form.note_gen||""} onChange={e=>setForm(f=>({...f,note_gen:e.target.value}))}/>
-                </div>
+              ))}
+            </div>
+            <div className="input-group">
+              <label className="input-label">Note sensoriali</label>
+              <textarea className="input" rows={3} value={form.note_sensoriali} onChange={e=>set('note_sensoriali',e.target.value)} style={{resize:'vertical'}}/>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="doe-section-title">Esito e note</div>
+            <div className="doe-grid" style={{marginBottom:12}}>
+              <div className="input-group">
+                <label className="input-label">Esito complessivo</label>
+                <select className="input" value={form.esito_complessivo} onChange={e=>set('esito_complessivo',e.target.value)}>
+                  <option value="">— scegli —</option>
+                  <option value="POSITIVO">POSITIVO</option>
+                  <option value="PARZIALE">PARZIALE</option>
+                  <option value="NEGATIVO">NEGATIVO</option>
+                </select>
               </div>
             </div>
-            <div className="mfoot">
-              <button className="bcancel" onClick={()=>setComp(null)}>Annulla</button>
-              <button className="bsave" onClick={save} disabled={saving}>{saving?"Salvataggio...":"Salva nel Google Sheet"}</button>
+            <div className="input-group">
+              <label className="input-label">Note generali</label>
+              <textarea className="input" rows={3} value={form.note_generali} onChange={e=>set('note_generali',e.target.value)} style={{resize:'vertical'}}/>
             </div>
+            <button className="btn btn-primary" onClick={handleSave} disabled={saving}
+              style={{marginTop:8}}>
+              {saving ? 'Salvataggio...' : '✓ Salva prova nel database'}
+            </button>
           </div>
         </div>
       )}
@@ -727,44 +1442,136 @@ function DoePage({data,loading,scriptUrl,onRefresh}){
   );
 }
 
-function ConfigPage({pubId,setPubId,scriptUrl,setScriptUrl,conn,onSave}){
-  const [lid,setLid]=useState(pubId),[lsc,setLsc]=useState(scriptUrl);
-  return(
-    <div className="page">
-      <div className="ph"><div className="pt">Configurazione</div><div className="ps">Connetti il tool al tuo Google Sheet</div></div>
-      <div className="cfcard">
-        <div style={{marginBottom:18}}>
-          <div className="cflbl">Google Sheet — ID di pubblicazione</div>
-          <input className="cfinput" value={lid} onChange={e=>setLid(e.target.value)} placeholder="2PACX-1v... oppure ID del foglio"/>
-          <div className="cfnote">
-            Usa l'ID di pubblicazione dalla finestra "Pubblica sul web" (inizia con <strong>2PACX...</strong>).<br/>
-            Oppure l'ID del foglio dall'URL del browser (dopo <code>/d/</code>).
+// ── SCHEDA OPERATIVA ──────────────────────────────────────────
+function SchedaOperativa({ data }) {
+  const { scheda_operativa, blend } = data;
+  const [blendId, setBlendId] = useState('B01');
+  const schede = scheda_operativa.filter(s => s.blend_id === blendId);
+  const blendInfo = blend.find(b => b.id === blendId);
+
+  return (
+    <div>
+      <h2 style={{fontSize:16,fontWeight:600,marginBottom:4}}>Scheda operativa terzista</h2>
+      <p style={{fontSize:13,color:'var(--n5)',marginBottom:16}}>Vista senza dosi riservate — da condividere con il terzista</p>
+
+      <div className="input-group" style={{maxWidth:240,marginBottom:20}}>
+        <label className="input-label">Blend</label>
+        <select className="input" value={blendId} onChange={e=>setBlendId(e.target.value)}>
+          {blend.map(b => <option key={b.id} value={b.id}>{b.id} — {b.nome}</option>)}
+        </select>
+      </div>
+
+      {blendInfo && (
+        <div className="card" style={{marginBottom:16,background:'var(--g0)',border:'1px solid var(--g2)'}}>
+          <div style={{display:'flex',gap:20,flexWrap:'wrap'}}>
+            <div><div className="stat-label">Blend</div><strong>{blendInfo.nome}</strong></div>
+            <div><div className="stat-label">Idratazione</div><span className="td-mono">{blendInfo.idratazione_min}-{blendInfo.idratazione_max}%</span></div>
+            <div><div className="stat-label">Stato</div><Badge cls={statoColors[blendInfo.stato]}>{blendInfo.stato}</Badge></div>
           </div>
         </div>
-        <div style={{marginBottom:18}}>
-          <div className="cflbl">URL Web App (Apps Script — per scrittura)</div>
-          <input className="cfinput" value={lsc} onChange={e=>setLsc(e.target.value)} placeholder="https://script.google.com/macros/s/..."/>
+      )}
+
+      {schede.length === 0 ? (
+        <Alert type="amber">Nessuna scheda operativa disponibile per questo blend.</Alert>
+      ) : (
+        ['A','B','C','D'].map(busta => {
+          const items = schede.filter(s => s.busta === busta);
+          if (!items.length) return null;
+          return (
+            <div key={busta} className="card" style={{marginBottom:12}}>
+              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
+                <div style={{width:32,height:32,background:'var(--g7)',color:'var(--wh)',borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:14}}>
+                  {busta}
+                </div>
+                <div>
+                  <div style={{fontWeight:600,fontSize:14}}>Busta {busta}</div>
+                  <div style={{fontSize:11,color:'var(--n5)'}}>{items.length} operazione{items.length>1?'i':''}</div>
+                </div>
+              </div>
+              {items.map((s,i) => (
+                <div key={i} style={{padding:'10px 0',borderTop:'1px solid var(--n2)'}}>
+                  <div style={{display:'flex',gap:10,alignItems:'flex-start',flexWrap:'wrap'}}>
+                    <Badge cls="badge-gray">{s.codice_anonimo}</Badge>
+                    <Badge cls={s.timing==='al_momento'?'badge-red':s.timing==='D-1'?'badge-amber':'badge-green'}>{s.timing}</Badge>
+                    <span style={{fontSize:13,fontWeight:500,color:'var(--n7)'}}>{s.protocollo}</span>
+                  </div>
+                  {s.parametri && <p style={{fontSize:13,color:'var(--n6)',marginTop:6,lineHeight:1.6}}>{s.parametri}</p>}
+                  {s.note_critiche && (
+                    <div style={{background:'var(--r0)',border:'1px solid var(--r1)',borderRadius:6,padding:'6px 10px',marginTop:6}}>
+                      <span style={{fontSize:12,color:'var(--r8)'}}>⚠ {s.note_critiche}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+// ── APP ROOT ──────────────────────────────────────────────────
+function App() {
+  const { data, loading, error } = useData();
+  const [module, setModule] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const renderModule = () => {
+    if (loading) return <Loading />;
+    if (error) return <Alert type="red">Errore caricamento dati: {error}</Alert>;
+    switch(module) {
+      case 'dashboard':   return <Dashboard data={data} />;
+      case 'ingredienti': return <Ingredienti data={data} />;
+      case 'additivi':    return <Additivi data={data} />;
+      case 'blend':       return <BlendBuilder data={data} />;
+      case 'matrici':     return <Matrici data={data} />;
+      case 'marketing':   return <Marketing data={data} />;
+      case 'doe':         return <ProveDoE data={data} />;
+      case 'operativa':   return <SchedaOperativa data={data} />;
+      default:            return <Dashboard data={data} />;
+    }
+  };
+
+  return (
+    <div className="app">
+      <div className="topbar">
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <div className="hamburger" onClick={()=>setSidebarOpen(!sidebarOpen)}>
+            <span/><span/><span/>
+          </div>
+          <div className="topbar-brand">
+            <div className="topbar-dot"/>
+            ZeroCereals R&D
+          </div>
         </div>
-        <button className="bprimary" onClick={()=>{setPubId(lid);setScriptUrl(lsc);localStorage.setItem("cf_pub_id",lid);localStorage.setItem("cf_script",lsc);onSave();}}>
-          Salva e verifica connessione
-        </button>
-        {conn==="ok"&&<div className="cfok">Connessione attiva — dati caricati correttamente dal Google Sheet.</div>}
-        {conn==="error"&&<div className="cferr">Connessione fallita. Verifica che l'URL della Web App (Apps Script) sia corretto e che lo script sia pubblicato con accesso "Chiunque".</div>}
-        <hr className="sep"/>
-        <div className="cflbl" style={{marginBottom:8}}>Come pubblicare il Google Sheet come CSV</div>
-        <div className="cfnote">
-          1. Apri il Google Sheet<br/>
-          2. File → Condividi → Pubblica sul web<br/>
-          3. Seleziona "Intero documento" e formato "Valori separati da virgola (CSV)"<br/>
-          4. Clicca "Pubblica"<br/>
-          5. Copia la parte dell'URL che inizia con <strong>2PACX...</strong> e incollala qui sopra
+        <div className="topbar-meta">
+          {data.ingredienti.length} ing · {data.additivi.length} add · {data.prove_doe.length} prove
         </div>
+      </div>
+
+      <div className="main">
+        <div className={`sidebar-overlay${sidebarOpen?' open':''}`} onClick={()=>setSidebarOpen(false)}/>
+        <nav className={`sidebar${sidebarOpen?' open':''}`}>
+          <div className="nav-section">Navigazione</div>
+          {MODULES.map(m => (
+            <div key={m.id} className={`nav-item${module===m.id?' active':''}`}
+              onClick={()=>{ setModule(m.id); setSidebarOpen(false); }}>
+              <span className="nav-icon">{m.icon}</span>
+              {m.label}
+            </div>
+          ))}
+        </nav>
+
+        <main className="content">
+          {renderModule()}
+        </main>
       </div>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
 </html>
