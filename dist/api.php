@@ -1,13 +1,24 @@
 <?php
 /**
- * ZeroCereals API v5 def
- * Nomenclature v2: fonte, data_aggiornamento, stato normalizzato
+ * ZeroCereals API — versione definitiva
+ * rd.metodonove.com/api.php
+ *
+ * Azioni disponibili:
+ *   GET  ?action=health          — stato DB e conteggi
+ *   POST ?action=import          — importa JSON statici in MySQL (chiave protetta)
+ *   POST ?action=save_doe        — salva prova DoE
+ *   GET  ?action=get_prove       — legge prove DoE
+ *   GET  ?action=get_prova&id=X  — legge singola prova DoE
+ *   GET  ?action=log_access      — registra accesso (chiamato dal React)
+ *   GET  ?action=get_log         — legge log accessi (solo bartolomeo)
  */
 
 error_reporting(0);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/php_errors.log');
+ini_set('memory_limit', '256M');
+set_time_limit(120);
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
@@ -19,16 +30,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-define('DB_HOST',     'localhost');
-define('DB_NAME',     'dhfmzeyo_zerocereals_kb');
-define('DB_USER',     'dhfmzeyo_zc_user');
-define('DB_PASS',     'KSTwS9,jO-TDA4!m');
-define('IMPORT_KEY',  '831807adc8a88be29409ec9a5111dd792a55cb35268cb8820c4f7da99fbdc9e5');
-define('DATA_DIR',    __DIR__ . '/data/');
+// ─── CONFIG ───────────────────────────────────────────────────
+define('DB_HOST',    'localhost');
+define('DB_NAME',    'dhfmzeyo_zerocereals_kb');
+define('DB_USER',    'dhfmzeyo_zc_user');
+define('DB_PASS',    'KSTwS9,jO-TDA4!m');
+define('IMPORT_KEY', '831807adc8a88be29409ec9a5111dd792a55cb35268cb8820c4f7da99fbdc9e5');
+define('DATA_DIR',   __DIR__ . '/data/');
 
-// ─── STATI VALIDI ─────────────────────────────────────────────
-const STATI_KB    = ['da_completare','stima','verificato','sperimentale'];
-const STATI_DOE   = ['esplorativa','doe_formale','annullata'];
+// Valori stato validi
+const STATI_KB  = ['da_completare','stima','verificato','sperimentale'];
+const STATI_DOE = ['esplorativa','doe_formale','annullata'];
 
 // ─── DB ───────────────────────────────────────────────────────
 function get_db(): PDO {
@@ -46,68 +58,75 @@ function get_db(): PDO {
             );
         } catch (PDOException $e) {
             http_response_code(500);
-            echo json_encode(['error'=>'DB connection failed','detail'=>$e->getMessage()]);
+            echo json_encode(['error' => 'DB connection failed']);
             exit();
         }
     }
     return $pdo;
 }
 
-function ok(array $data=[]): void {
-    echo json_encode(['status'=>'ok']+$data);
+// ─── HELPER ───────────────────────────────────────────────────
+function ok(array $data = []): void {
+    echo json_encode(['status' => 'ok'] + $data);
     exit();
 }
 
-function err(string $msg, int $code=400): void {
+function err(string $msg, int $code = 400): void {
     http_response_code($code);
-    echo json_encode(['status'=>'error','message'=>$msg]);
+    echo json_encode(['status' => 'error', 'message' => $msg]);
     exit();
 }
 
 function load_json(string $filename): array {
-    $path = DATA_DIR.$filename;
+    $path = DATA_DIR . $filename;
     if (!file_exists($path)) return [];
     $data = json_decode(file_get_contents($path), true);
     return is_array($data) ? $data : [];
 }
 
 function upsert(PDO $pdo, string $table, array $row, string $pk): void {
-    if (empty($row)||!isset($row[$pk])) return;
-    $cols  = array_keys($row);
-    $vals  = array_values($row);
-    $ph    = implode(',', array_fill(0,count($cols),'?'));
-    $upd   = implode(',', array_map(
-        fn($c)=>"`$c`=VALUES(`$c`)",
-        array_filter($cols, fn($c)=>$c!==$pk)
+    if (empty($row) || !isset($row[$pk])) return;
+    $cols = array_keys($row);
+    $vals = array_values($row);
+    $ph   = implode(',', array_fill(0, count($cols), '?'));
+    $upd  = implode(',', array_map(
+        fn($c) => "`$c`=VALUES(`$c`)",
+        array_filter($cols, fn($c) => $c !== $pk)
     ));
     if (!$upd) return;
     $pdo->prepare(
-        "INSERT INTO `$table` (`".implode('`,`',$cols)."`) VALUES ($ph)
+        "INSERT INTO `$table` (`".implode('`,`', $cols)."`) VALUES ($ph)
          ON DUPLICATE KEY UPDATE $upd"
     )->execute($vals);
 }
 
-// ─── IMPORT GENERICO ──────────────────────────────────────────
 function import_table(
     PDO $pdo, string $file, string $table, string $pk,
-    array $int_f=[], array $float_f=[], array $skip_f=[]
+    array $int_f = [], array $float_f = [], array $skip_f = []
 ): int {
     $rows = load_json($file);
     if (empty($rows)) return 0;
+    // Ottieni colonne effettive del DB per evitare errori su colonne inesistenti
+    $db_cols = [];
+    foreach ($pdo->query("DESCRIBE `$table`") as $col) {
+        $db_cols[] = $col['Field'];
+    }
     $count = 0;
     foreach ($rows as $r) {
         if (empty($r[$pk])) continue;
         $row = [];
-        foreach ($r as $k=>$v) {
-            if (in_array($k,$skip_f)) continue;
-            if ($v===null||$v==='') continue;
-            // Salta campi data con valori non validi
-            if (in_array($k,['data_inserimento','data_aggiornamento','data_verifica','data']) && !preg_match('/^\d{4}-\d{2}-\d{2}/', (string)$v)) continue;
-            if (in_array($k,$int_f))   $row[$k]=(int)$v;
-            elseif (in_array($k,$float_f)) $row[$k]=(float)$v;
-            else $row[$k]=is_array($v)?json_encode($v):(string)$v;
+        foreach ($r as $k => $v) {
+            if (in_array($k, $skip_f)) continue;
+            if (!in_array($k, $db_cols)) continue; // salta colonne non nel DB
+            if ($v === null || $v === '') continue;
+            // Salta date non valide
+            if (in_array($k, ['data_inserimento','data_aggiornamento','data_verifica','data'])
+                && !preg_match('/^\d{4}-\d{2}-\d{2}/', (string)$v)) continue;
+            if (in_array($k, $int_f))       $row[$k] = (int)$v;
+            elseif (in_array($k, $float_f)) $row[$k] = (float)$v;
+            else $row[$k] = is_array($v) ? json_encode($v) : (string)$v;
         }
-        upsert($pdo,$table,$row,$pk);
+        upsert($pdo, $table, $row, $pk);
         $count++;
     }
     return $count;
@@ -122,63 +141,62 @@ switch ($action) {
     case 'health':
         $pdo = get_db();
         ok([
-            'db'          => 'connected',
-            'schema'      => 'v2',
-            'ingredienti' => (int)$pdo->query("SELECT COUNT(*) FROM ingredienti")->fetchColumn(),
-            'additivi'    => (int)$pdo->query("SELECT COUNT(*) FROM additivi")->fetchColumn(),
-            'matrici_reol'=> (int)$pdo->query("SELECT COUNT(*) FROM matrici_reol")->fetchColumn(),
-            'prove_doe'   => (int)$pdo->query("SELECT COUNT(*) FROM prove_doe")->fetchColumn(),
-            'timestamp'   => date('Y-m-d H:i:s'),
+            'db'            => 'connected',
+            'schema'        => 'v2.1',
+            'ingredienti'   => (int)$pdo->query("SELECT COUNT(*) FROM ingredienti")->fetchColumn(),
+            'additivi'      => (int)$pdo->query("SELECT COUNT(*) FROM additivi")->fetchColumn(),
+            'matrici_reol'  => (int)$pdo->query("SELECT COUNT(*) FROM matrici_reol")->fetchColumn(),
+            'prove_doe'     => (int)$pdo->query("SELECT COUNT(*) FROM prove_doe")->fetchColumn(),
+            'timestamp'     => date('Y-m-d H:i:s'),
         ]);
         break;
 
     // ── IMPORT JSON → MYSQL ───────────────────────────────────
     case 'import':
-        $key = $_SERVER['HTTP_X_IMPORT_KEY'] ?? ($_POST['key']??'');
-        if ($key!==IMPORT_KEY) err('Unauthorized',401);
-
+        $key = $_SERVER['HTTP_X_IMPORT_KEY'] ?? ($_POST['key'] ?? '');
+        if ($key !== IMPORT_KEY) err('Unauthorized', 401);
         $pdo = get_db();
         $res = [];
 
-        // Ingredienti — nomenclatura v2: fonte, data_aggiornamento
-        $res['ingredienti'] = import_table($pdo,'ingredienti.json','ingredienti','id',
+        // Ingredienti
+        $res['ingredienti'] = import_table($pdo, 'ingredienti.json', 'ingredienti', 'id',
             ['id','ig','ig_crudo','ig_cotto','assorbimento_idrico_pct',
              'temp_gel_c','fitati_post_attivazione_pct','attivato'],
             ['proteina_g','amido_g','carboidrati_g','amido_puro_g','lipidi_g',
              'fibra_g','fibra_solubile_g','fibra_insolubile_g','zuccheri_g',
              'kcal','acido_fitico_mg','amido_resistente_g','inulina_g',
              'beta_glucani_g','calcio_mg','ferro_mg','magnesio_mg',
-             'potassio_mg','ph_nativo']
+             'potassio_mg','ph_nativo','costo_kg']
         );
 
         // IG per stato
         $rows = load_json('ig_per_stato.json');
-        $n=0;
+        $n = 0;
         foreach ($rows as $r) {
-            if (empty($r['ingrediente_id'])||empty($r['stato_processo'])) continue;
+            if (empty($r['ingrediente_id']) || empty($r['stato_processo'])) continue;
             $pdo->prepare(
                 "INSERT INTO ingredienti_ig_per_stato
-                 (ingrediente_id,stato_processo,ig_valore,ig_fonte,note,data_inserimento)
-                 VALUES (?,?,?,?,?,?)
+                 (ingrediente_id,stato_processo,ig_valore,ig_fonte,note)
+                 VALUES (?,?,?,?,?)
                  ON DUPLICATE KEY UPDATE
                  ig_valore=VALUES(ig_valore),ig_fonte=VALUES(ig_fonte),note=VALUES(note)"
             )->execute([
-                (int)$r['ingrediente_id'],$r['stato_processo'],
-                isset($r['ig_valore'])?(int)$r['ig_valore']:null,
-                $r['ig_fonte']??null,$r['note']??null,$r['data_inserimento']??null,
+                (int)$r['ingrediente_id'], $r['stato_processo'],
+                isset($r['ig_valore']) ? (int)$r['ig_valore'] : null,
+                $r['ig_fonte'] ?? null, $r['note'] ?? null,
             ]);
             $n++;
         }
-        $res['ig_per_stato']=$n;
+        $res['ig_per_stato'] = $n;
 
-        // Additivi — nomenclatura v2: fonte, data_aggiornamento
-        $res['additivi'] = import_table($pdo,'additivi.json','additivi','id',
+        // Additivi
+        $res['additivi'] = import_table($pdo, 'additivi.json', 'additivi', 'id',
             ['ig'],
-            ['dose_min_pct','dose_max_pct','dose_ottimale_pct']
+            ['dose_min_pct','dose_max_pct','dose_ottimale_pct','costo_kg']
         );
 
         // Blend
-        $res['blend'] = import_table($pdo,'blend.json','blend','id',
+        $res['blend'] = import_table($pdo, 'blend.json', 'blend', 'id',
             ['score_struttura','score_sapore','score_lievitazione',
              'score_shelflife','ig_stimato','idratazione_min','idratazione_max'],
             ['proteine_g']
@@ -186,78 +204,79 @@ switch ($action) {
 
         // Matrici ingredienti × ingredienti
         foreach ([
-            ['matrici_reol.json','matrici_reol','id_a','id_b'],
-            ['matrici_chim.json','matrici_chim','id_a','id_b'],
-            ['matrici_sens.json','matrici_sens','id_a','id_b'],
-        ] as [$file,$table,$a,$b]) {
-            $rows=load_json($file); $n=0;
+            ['matrici_reol.json', 'matrici_reol', 'id_a', 'id_b'],
+            ['matrici_chim.json', 'matrici_chim', 'id_a', 'id_b'],
+            ['matrici_sens.json', 'matrici_sens', 'id_a', 'id_b'],
+        ] as [$file, $table, $a, $b]) {
+            $rows = load_json($file);
+            $n = 0;
             foreach ($rows as $r) {
-                if (empty($r[$a])||empty($r[$b])) continue;
+                if (empty($r[$a]) || empty($r[$b])) continue;
                 $pdo->prepare(
-                    "INSERT INTO `$table` (`$a`,`$b`,punteggio,note,fonte,stato,data)
-                     VALUES (?,?,?,?,?,?,?)
+                    "INSERT INTO `$table` (`$a`,`$b`,punteggio,note,fonte,stato)
+                     VALUES (?,?,?,?,?,?)
                      ON DUPLICATE KEY UPDATE
                      punteggio=VALUES(punteggio),note=VALUES(note),fonte=VALUES(fonte)"
                 )->execute([
-                    (int)$r[$a],(int)$r[$b],
-                    isset($r['punteggio'])?(int)$r['punteggio']:null,
-                    $r['note']??null,$r['fonte']??null,
-                    $r['stato']??'stima',$r['data']??null,
+                    (int)$r[$a], (int)$r[$b],
+                    isset($r['punteggio']) ? (int)$r['punteggio'] : null,
+                    $r['note'] ?? null, $r['fonte'] ?? null,
+                    $r['stato'] ?? 'stima',
                 ]);
                 $n++;
             }
-            $res[$table]=$n;
+            $res[$table] = $n;
         }
 
         // Matrice additivi × ingredienti
-        $rows=load_json('matrici_additivi.json'); $n=0;
+        $rows = load_json('matrici_additivi.json');
+        $n = 0;
         foreach ($rows as $r) {
-            if (empty($r['additivo_id'])||empty($r['ingrediente_id'])) continue;
+            if (empty($r['additivo_id']) || empty($r['ingrediente_id'])) continue;
             $pdo->prepare(
                 "INSERT INTO matrici_additivi_ingredienti
-                 (additivo_id,ingrediente_id,tipo_interazione,punteggio,note,fonte,stato,data)
-                 VALUES (?,?,?,?,?,?,?,?)
+                 (additivo_id,ingrediente_id,tipo_interazione,punteggio,note,fonte,stato)
+                 VALUES (?,?,?,?,?,?,?)
                  ON DUPLICATE KEY UPDATE
                  tipo_interazione=VALUES(tipo_interazione),
                  punteggio=VALUES(punteggio),note=VALUES(note),fonte=VALUES(fonte)"
             )->execute([
-                $r['additivo_id'],(int)$r['ingrediente_id'],
-                $r['tipo_interazione']??null,
-                isset($r['punteggio'])?(int)$r['punteggio']:null,
-                $r['note']??null,$r['fonte']??null,
-                $r['stato']??'stima',$r['data']??null,
+                $r['additivo_id'], (int)$r['ingrediente_id'],
+                $r['tipo_interazione'] ?? null,
+                isset($r['punteggio']) ? (int)$r['punteggio'] : null,
+                $r['note'] ?? null, $r['fonte'] ?? null,
+                $r['stato'] ?? 'stima',
             ]);
             $n++;
         }
-        $res['matrici_additivi']=$n;
+        $res['matrici_additivi'] = $n;
 
         // Scheda operativa
-        $res['scheda_operativa']=import_table($pdo,'scheda_operativa.json',
-            'scheda_operativa','id');
+        $res['scheda_operativa'] = import_table($pdo, 'scheda_operativa.json',
+            'scheda_operativa', 'id');
 
-        ok(['imported'=>$res,'timestamp'=>date('Y-m-d H:i:s')]);
+        ok(['imported' => $res, 'timestamp' => date('Y-m-d H:i:s')]);
         break;
 
     // ── SALVA PROVA DOE ───────────────────────────────────────
     case 'save_doe':
-        if ($_SERVER['REQUEST_METHOD']!=='POST') err('POST required');
-        $data=json_decode(file_get_contents('php://input'),true);
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') err('POST required');
+        $data = json_decode(file_get_contents('php://input'), true);
         if (!$data) err('Invalid JSON');
         if (empty($data['id'])) err('Campo id obbligatorio');
 
-        // Valida stato
-        $stato=$data['stato']??'esplorativa';
-        if (!in_array($stato,STATI_DOE))
-            err('Stato non valido. Valori ammessi: '.implode(', ',STATI_DOE));
+        $stato = $data['stato'] ?? 'esplorativa';
+        if (!in_array($stato, STATI_DOE))
+            err('Stato non valido. Valori: ' . implode(', ', STATI_DOE));
 
-        $pdo=get_db();
-        $row=['id'=>$data['id'],'stato'=>$stato];
+        $pdo = get_db();
+        $row = ['id' => $data['id'], 'stato' => $stato];
 
         foreach (['blend_id','operatore','luogo','tipo_impastatrice',
                   'modello_impastatrice','tipo_forno','modello_forno',
                   'tipo_cella_lievitazione','strumenti_misura','note_impasto',
                   'note_sensoriali','foto_url','note_generali','esito_complessivo'] as $f)
-            if (isset($data[$f])&&$data[$f]!=='') $row[$f]=(string)$data[$f];
+            if (isset($data[$f]) && $data[$f] !== '') $row[$f] = (string)$data[$f];
 
         foreach (['numero_prova','friction_factor','t_cottura_fase1_c',
                   'durata_fase1_min','t_cottura_fase2_c','durata_fase2_min',
@@ -265,7 +284,7 @@ switch ($action) {
                   'texture_1_9','croccantezza_1_9','retrogusto_1_9',
                   'soddisfazione_1_9','gommosita_1_9','durata_puntatura_min',
                   'durata_apretto_min'] as $f)
-            if (isset($data[$f])&&$data[$f]!=='') $row[$f]=(int)$data[$f];
+            if (isset($data[$f]) && $data[$f] !== '') $row[$f] = (int)$data[$f];
 
         foreach (['t_ambiente_c','ur_ambiente_pct','t_farine_c',
                   't_acqua_calcolata_c','t_acqua_usata_c','t_impasto_uscita_c',
@@ -276,51 +295,49 @@ switch ($action) {
                   'volume_specifico_ml_g','durezza_mollica_n','colore_crosta_l',
                   'colore_crosta_a','colore_crosta_b','ph_mollica',
                   'aw_prodotto','umidita_pct'] as $f)
-            if (isset($data[$f])&&$data[$f]!=='') $row[$f]=(float)$data[$f];
+            if (isset($data[$f]) && $data[$f] !== '') $row[$f] = (float)$data[$f];
 
         foreach (['fitasi_usata','gox_usata'] as $f)
-            if (isset($data[$f])) $row[$f]=$data[$f]?1:0;
+            if (isset($data[$f])) $row[$f] = $data[$f] ? 1 : 0;
 
-        if (!empty($data['data'])) $row['data']=$data['data'];
+        if (!empty($data['data'])) $row['data'] = $data['data'];
 
-        upsert($pdo,'prove_doe',$row,'id');
-        ok(['id'=>$data['id'],'stato'=>$stato,'saved'=>true]);
+        upsert($pdo, 'prove_doe', $row, 'id');
+        ok(['id' => $data['id'], 'stato' => $stato, 'saved' => true]);
         break;
 
     // ── GET PROVE ─────────────────────────────────────────────
     case 'get_prove':
         $pdo   = get_db();
-        $limit = min((int)($_GET['limit']??50),200);
-        $blend = $_GET['blend_id']??null;
-        $stato = $_GET['stato']??null;
-
-        $where=[]; $args=[];
-        if ($blend) { $where[]="blend_id=?"; $args[]=$blend; }
-        if ($stato && in_array($stato,STATI_DOE)) {
-            $where[]="stato=?"; $args[]=$stato;
+        $limit = min((int)($_GET['limit'] ?? 50), 200);
+        $blend = $_GET['blend_id'] ?? null;
+        $stato = $_GET['stato'] ?? null;
+        $where = [];
+        $args  = [];
+        if ($blend) { $where[] = "blend_id=?"; $args[] = $blend; }
+        if ($stato && in_array($stato, STATI_DOE)) {
+            $where[] = "stato=?"; $args[] = $stato;
         }
-        $wstr = $where ? "WHERE ".implode(' AND ',$where) : "";
-
-        $stmt=$pdo->prepare(
+        $wstr = $where ? "WHERE " . implode(' AND ', $where) : "";
+        $stmt = $pdo->prepare(
             "SELECT * FROM prove_doe $wstr
              ORDER BY data DESC, numero_prova DESC LIMIT $limit"
         );
         $stmt->execute($args);
-        ok(['prove'=>$stmt->fetchAll(),'count'=>$stmt->rowCount()]);
+        ok(['prove' => $stmt->fetchAll(), 'count' => $stmt->rowCount()]);
         break;
 
     // ── GET SINGOLA PROVA ─────────────────────────────────────
     case 'get_prova':
-        $id=$_GET['id']??'';
+        $id = $_GET['id'] ?? '';
         if (!$id) err('id required');
-        $pdo=$get_db=get_db();
-        $stmt=$pdo->prepare("SELECT * FROM prove_doe WHERE id=?");
+        $pdo  = get_db();
+        $stmt = $pdo->prepare("SELECT * FROM prove_doe WHERE id=?");
         $stmt->execute([$id]);
-        $row=$stmt->fetch();
-        if (!$row) err('Prova non trovata',404);
-        ok(['prova'=>$row]);
+        $row  = $stmt->fetch();
+        if (!$row) err('Prova non trovata', 404);
+        ok(['prova' => $row]);
         break;
-
 
     // ── LOG ACCESSO ───────────────────────────────────────────
     case 'log_access':
@@ -334,14 +351,14 @@ switch ($action) {
             "INSERT INTO access_log (utente,ip,user_agent,modulo,azione)
              VALUES (?,?,?,?,?)"
         )->execute([$utente, $ip, $ua, $modulo, $azione]);
-        ok(['logged'=>true,'utente'=>$utente]);
+        ok(['logged' => true, 'utente' => $utente]);
         break;
 
-    // ── LEGGI LOG ACCESSI ─────────────────────────────────────
+    // ── GET LOG ACCESSI ───────────────────────────────────────
     case 'get_log':
         $pdo    = get_db();
         $utente = $_SERVER['PHP_AUTH_USER'] ?? '';
-        if ($utente !== 'bartolomeo') err('Solo bartolomeo può vedere i log', 403);
+        if ($utente !== 'bartolomeo') err('Accesso negato', 403);
         $limit  = min((int)($_GET['limit'] ?? 100), 500);
         $filtro = $_GET['utente'] ?? null;
         $where  = $filtro ? "WHERE utente=?" : "";
@@ -351,114 +368,10 @@ switch ($action) {
              ORDER BY timestamp DESC LIMIT $limit"
         );
         $stmt->execute($args);
-        ok(['log'=>$stmt->fetchAll(),'count'=>$stmt->rowCount()]);
+        ok(['log' => $stmt->fetchAll(), 'count' => $stmt->rowCount()]);
         break;
 
-
-    // ── IMPORT DEBUG — solo primi 5 ingredienti ──────────────
-    case 'import_debug':
-        $key = $_SERVER['HTTP_X_IMPORT_KEY'] ?? '';
-        if ($key !== IMPORT_KEY) err('Unauthorized', 401);
-        $pdo = get_db();
-        $rows = load_json('ingredienti.json');
-        $rows = array_slice($rows, 0, 3);
-        $n = 0;
-        $errors = [];
-        foreach ($rows as $r) {
-            if (empty($r['id'])) continue;
-            try {
-                $row = ['id' => (int)$r['id'], 'nome' => (string)($r['nome']??'')];
-                if (!empty($r['proteina_g'])) $row['proteina_g'] = (float)$r['proteina_g'];
-                if (!empty($r['stato'])) $row['stato'] = (string)$r['stato'];
-                upsert($pdo, 'ingredienti', $row, 'id');
-                $n++;
-            } catch (Exception $e) {
-                $errors[] = ['id'=>$r['id'],'err'=>$e->getMessage()];
-            }
-        }
-        ok(['test_import_ok'=>$n, 'errors'=>$errors, 'sample_keys'=>array_keys($rows[0]??[])]);
-        break;
-
-
-    // ── IMPORT STEP — una tabella alla volta ─────────────────
-    case 'import_step':
-        $key = $_SERVER['HTTP_X_IMPORT_KEY'] ?? '';
-        if ($key !== IMPORT_KEY) err('Unauthorized', 401);
-        $step = $_GET['step'] ?? 'ingredienti';
-        $pdo = get_db();
-        $res = [];
-
-        if ($step === 'ingredienti') {
-            $res['ingredienti'] = import_table($pdo,'ingredienti.json','ingredienti','id',
-                ['id','ig','ig_crudo','ig_cotto','assorbimento_idrico_pct','temp_gel_c','fitati_post_attivazione_pct','attivato'],
-                ['proteina_g','amido_g','carboidrati_g','amido_puro_g','lipidi_g','fibra_g','fibra_solubile_g','fibra_insolubile_g','zuccheri_g','kcal','acido_fitico_mg','amido_resistente_g','inulina_g','beta_glucani_g','calcio_mg','ferro_mg','magnesio_mg','potassio_mg','ph_nativo'],
-                ['data_inserimento','data_aggiornamento']
-            );
-        } elseif ($step === 'ig_per_stato') {
-            $rows = load_json('ig_per_stato.json'); $n=0;
-            foreach ($rows as $r) {
-                if (empty($r['ingrediente_id'])||empty($r['stato_processo'])) continue;
-                $pdo->prepare("INSERT INTO ingredienti_ig_per_stato (ingrediente_id,stato_processo,ig_valore,ig_fonte,note) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE ig_valore=VALUES(ig_valore),ig_fonte=VALUES(ig_fonte),note=VALUES(note)"
-                )->execute([(int)$r['ingrediente_id'],$r['stato_processo'],isset($r['ig_valore'])?(int)$r['ig_valore']:null,$r['ig_fonte']??null,$r['note']??null]);
-                $n++;
-            }
-            $res['ig_per_stato'] = $n;
-        } elseif ($step === 'additivi') {
-            $res['additivi'] = import_table($pdo,'additivi.json','additivi','id',
-                ['ig'],['dose_min_pct','dose_max_pct','dose_ottimale_pct'],['data_inserimento','data_aggiornamento']
-            );
-        } elseif ($step === 'blend') {
-            $res['blend'] = import_table($pdo,'blend.json','blend','id',
-                ['score_struttura','score_sapore','score_lievitazione','score_shelflife','ig_stimato','idratazione_min','idratazione_max'],
-                ['proteine_g'],['data_inserimento']
-            );
-        } elseif ($step === 'matrici_reol') {
-            $rows=load_json('matrici_reol.json'); $n=0;
-            foreach ($rows as $r) {
-                if (empty($r['id_a'])||empty($r['id_b'])) continue;
-                $pdo->prepare("INSERT INTO matrici_reol (id_a,id_b,punteggio,note,fonte,stato) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE punteggio=VALUES(punteggio),note=VALUES(note)"
-                )->execute([(int)$r['id_a'],(int)$r['id_b'],isset($r['punteggio'])?(int)$r['punteggio']:null,$r['note']??null,$r['fonte']??null,$r['stato']??'stima']);
-                $n++;
-            }
-            $res['matrici_reol'] = $n;
-        } elseif ($step === 'matrici_chim') {
-            $rows=load_json('matrici_chim.json'); $n=0;
-            foreach ($rows as $r) {
-                if (empty($r['id_a'])||empty($r['id_b'])) continue;
-                $pdo->prepare("INSERT INTO matrici_chim (id_a,id_b,punteggio,note,fonte,stato) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE punteggio=VALUES(punteggio),note=VALUES(note)"
-                )->execute([(int)$r['id_a'],(int)$r['id_b'],isset($r['punteggio'])?(int)$r['punteggio']:null,$r['note']??null,$r['fonte']??null,$r['stato']??'stima']);
-                $n++;
-            }
-            $res['matrici_chim'] = $n;
-        } elseif ($step === 'matrici_sens') {
-            $rows=load_json('matrici_sens.json'); $n=0;
-            foreach ($rows as $r) {
-                if (empty($r['id_a'])||empty($r['id_b'])) continue;
-                $pdo->prepare("INSERT INTO matrici_sens (id_a,id_b,punteggio,note,fonte,stato) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE punteggio=VALUES(punteggio),note=VALUES(note)"
-                )->execute([(int)$r['id_a'],(int)$r['id_b'],isset($r['punteggio'])?(int)$r['punteggio']:null,$r['note']??null,$r['fonte']??null,$r['stato']??'stima']);
-                $n++;
-            }
-            $res['matrici_sens'] = $n;
-        } elseif ($step === 'matrici_additivi') {
-            $rows=load_json('matrici_additivi.json'); $n=0;
-            foreach ($rows as $r) {
-                if (empty($r['additivo_id'])||empty($r['ingrediente_id'])) continue;
-                $pdo->prepare("INSERT INTO matrici_additivi_ingredienti (additivo_id,ingrediente_id,tipo_interazione,punteggio,note,fonte,stato) VALUES (?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE tipo_interazione=VALUES(tipo_interazione),punteggio=VALUES(punteggio),note=VALUES(note)"
-                )->execute([$r['additivo_id'],(int)$r['ingrediente_id'],$r['tipo_interazione']??null,isset($r['punteggio'])?(int)$r['punteggio']:null,$r['note']??null,$r['fonte']??null,$r['stato']??'stima']);
-                $n++;
-            }
-            $res['matrici_additivi'] = $n;
-        }
-        ok(['step'=>$step,'result'=>$res]);
-        break;
-
+    // ── DEFAULT ───────────────────────────────────────────────
     default:
-        err("Azione non riconosciuta: '$action'",400);
+        err("Azione non riconosciuta: '$action'", 400);
 }
-// ── AGGIORNAMENTO: aggiungi dopo il case 'health' ──────────────
-// case 'log_access':
-//   Registra accesso. Chiamato dal React al caricamento.
-//   GET ?action=log_access&modulo=X
-// case 'get_log':
-//   Legge log accessi. Solo per bartolomeo.
-//   GET ?action=get_log&limit=100
