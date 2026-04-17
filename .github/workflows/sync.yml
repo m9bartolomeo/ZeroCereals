@@ -47,6 +47,7 @@ jobs:
           curl -s -X POST \
             "https://rd.metodonove.com/api.php?action=import" \
             -H "X-Import-Key: ${{ secrets.IMPORT_KEY }}" \
+            -u "${{ secrets.HTTP_USER }}:${{ secrets.HTTP_PASS }}" \
             | python3 -c "
           import sys, json
           r = json.load(sys.stdin)
