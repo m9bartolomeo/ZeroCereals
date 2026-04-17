@@ -49,7 +49,7 @@ jobs:
           IMPORT_KEY: ${{ secrets.IMPORT_KEY }}
         run: |
           python3 << 'PYEOF'
-          import urllib.request, json, base64, sys, os
+          import urllib.request, urllib.error, json, base64, sys, os
           url  = 'https://rd.metodonove.com/api.php?action=import'
           user = os.environ['HTTP_USER']
           pwd  = os.environ['HTTP_PASS']
@@ -61,11 +61,18 @@ jobs:
           try:
               with urllib.request.urlopen(req, timeout=30) as r:
                   body = r.read().decode()
-                  print('Raw response:', body[:200])
+                  print('Response:', body[:500])
                   data = json.loads(body)
                   print('Import result:', json.dumps(data, indent=2))
                   sys.exit(0 if data.get('status') == 'ok' else 1)
+          except urllib.error.HTTPError as e:
+              body = e.read().decode()
+              print('HTTP', e.code, ':', body[:500])
+              sys.exit(1)
           except Exception as e:
+              print('Error:', type(e).__name__, e)
+              sys.exit(1)
+          PYEOF
               print('Error:', e)
               sys.exit(1)
           PYEOF
