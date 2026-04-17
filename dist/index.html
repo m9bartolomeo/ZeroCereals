@@ -211,6 +211,7 @@ function useData() {
       files.forEach((f, i) => d[f] = results[i]);
       setData(d);
       setLoading(false);
+      fetch(`${API}?action=log_access&modulo=app&azione=caricamento`).catch(()=>{});
     }).catch(e => { setError(e.message); setLoading(false); });
   }, []);
 
@@ -658,10 +659,15 @@ function BlendBuilder({ data }) {
   const { ingredienti, additivi, matrici_reol, matrici_chim, matrici_sens, matrici_additivi, ig_per_stato } = data;
   const [selectedIng, setSelectedIng] = useState([]);
   const [selectedAdd, setSelectedAdd] = useState([]);
+  const [selectedEnz, setSelectedEnz] = useState([]);
   const [doses, setDoses] = useState({});
   const [qIng, setQIng]  = useState('');
   const [qAdd, setQAdd]  = useState('');
+  const [qEnz, setQEnz]  = useState('');
   const [tab, setTab]     = useState('composizione');
+
+  const additiviBase  = additivi.filter(a => a.categoria !== 'enzima');
+  const enzimiList    = additivi.filter(a => a.categoria === 'enzima');
 
   const addIngrediente = (ing) => {
     if (selectedIng.find(i => i.id === ing.id)) return;
@@ -685,6 +691,17 @@ function BlendBuilder({ data }) {
     setDoses(prev => { const d = {...prev}; delete d[`a_${id}`]; return d; });
   };
 
+  const addEnzima = (enz) => {
+    if (selectedEnz.find(e => e.id === enz.id)) return;
+    setSelectedEnz(prev => [...prev, enz]);
+    setDoses(prev => ({...prev, [`e_${enz.id}`]: enz.dose_ottimale_pct || 0.005}));
+  };
+
+  const removeEnzima = (id) => {
+    setSelectedEnz(prev => prev.filter(e => e.id !== id));
+    setDoses(prev => { const d = {...prev}; delete d[`e_${id}`]; return d; });
+  };
+
   // Calcolo IG composito
   const igComposito = useMemo(() => {
     if (!selectedIng.length) return null;
@@ -705,18 +722,21 @@ function BlendBuilder({ data }) {
 
   // Claim EU aggregati
   const claimAggregati = useMemo(() => {
-    return selectedIng
+    const fromIng = selectedIng
       .filter(i => i.claim_salutistico_eu && i.claim_salutistico_eu.includes('432/2012') && (Number(doses[`i_${i.id}`])||0) >= 5)
       .map(i => ({ nome: i.nome, claim: i.claim_salutistico_eu }));
-  }, [selectedIng, doses]);
+    const fromAdd = selectedAdd
+      .filter(a => a.claim_salutistico_eu && a.claim_salutistico_eu.includes('432/2012'))
+      .map(a => ({ nome: a.nome, claim: a.claim_salutistico_eu }));
+    return [...fromIng, ...fromAdd];
+  }, [selectedIng, selectedAdd, doses]);
 
-  // Interazioni critiche
+  // Interazioni critiche — include anche enzimi
   const interazioniCritiche = useMemo(() => {
     const critiche = [];
-    const ids = selectedIng.map(i => String(i.id));
-    const addIds = selectedAdd.map(a => String(a.id));
+    const ids    = selectedIng.map(i => String(i.id));
+    const addIds = [...selectedAdd, ...selectedEnz].map(a => String(a.id));
 
-    // Ingrediente × ingrediente
     [...matrici_reol, ...matrici_chim, ...matrici_sens].forEach(r => {
       if (ids.includes(String(r.id_a)) && ids.includes(String(r.id_b)) && r.punteggio <= 2) {
         const a = ingredienti.find(i => String(i.id) === String(r.id_a));
@@ -725,27 +745,43 @@ function BlendBuilder({ data }) {
       }
     });
 
-    // Additivo × ingrediente
     matrici_additivi.forEach(r => {
       if (addIds.includes(String(r.additivo_id)) && ids.includes(String(r.ingrediente_id)) && r.punteggio <= 2) {
         const a = additivi.find(x => String(x.id) === String(r.additivo_id));
         const b = ingredienti.find(i => String(i.id) === String(r.ingrediente_id));
-        critiche.push({ tipo: 'additivo', a: a?.nome, b: b?.nome, punteggio: r.punteggio, note: r.note });
+        critiche.push({ tipo: r.tipo_interazione||'additivo', a: a?.nome, b: b?.nome, punteggio: r.punteggio, note: r.note });
       }
     });
 
+    // Incompatibilità tra enzimi (E03 GOX vs A03 vitamina C)
+    const enzIds = selectedEnz.map(e => e.id);
+    const addSelIds = selectedAdd.map(a => a.id);
+    if (enzIds.includes('E03') && addSelIds.includes('A03')) {
+      critiche.push({ tipo: 'enzima', a: 'GOX (E03)', b: 'Vitamina C (A03)', punteggio: 1,
+        note: 'Competizione ossidoriduzione: GOX e vitamina C ad alte dosi si annullano a vicenda. Evitare combinazione.' });
+    }
+    if (enzIds.includes('E01') && enzIds.includes('E04')) {
+      critiche.push({ tipo: 'enzima', a: 'Amilasi (E01)', b: 'Proteasi (E04)', punteggio: 2,
+        note: 'Idrolisi combinata amido+proteina può collassare struttura impasto. Testare separatamente prima.' });
+    }
+
     return critiche;
-  }, [selectedIng, selectedAdd, matrici_reol, matrici_chim, matrici_sens, matrici_additivi]);
+  }, [selectedIng, selectedAdd, selectedEnz, matrici_reol, matrici_chim, matrici_sens, matrici_additivi]);
 
   const filteredIng = ingredienti.filter(i =>
     !selectedIng.find(s=>s.id===i.id) &&
     (i.nome.toLowerCase().includes(qIng.toLowerCase()))
   ).slice(0, 15);
 
-  const filteredAdd = additivi.filter(a =>
+  const filteredAdd = additiviBase.filter(a =>
     !selectedAdd.find(s=>s.id===a.id) &&
     (a.nome.toLowerCase().includes(qAdd.toLowerCase()))
-  ).slice(0, 10);
+  ).slice(0, 8);
+
+  const filteredEnz = enzimiList.filter(e =>
+    !selectedEnz.find(s=>s.id===e.id) &&
+    (e.nome.toLowerCase().includes(qEnz.toLowerCase()))
+  );
 
   return (
     <div>
@@ -803,6 +839,27 @@ function BlendBuilder({ data }) {
                   <button onClick={()=>removeAdditivo(a.id)} style={{color:'var(--n4)',fontSize:16,padding:'0 4px'}}>×</button>
                 </div>
               ))}
+
+              <div style={{marginTop:14,paddingTop:12,borderTop:'1px solid var(--n2)'}}>
+                <div style={{fontSize:12,fontWeight:600,color:'var(--b8)',marginBottom:8,display:'flex',alignItems:'center',gap:6}}>
+                  <span>⚗</span> Enzimi selezionati
+                  <Badge cls="badge-blue" style={{fontSize:10}}>non-OGM required</Badge>
+                </div>
+                {selectedEnz.length === 0 && <p style={{fontSize:12,color:'var(--n5)'}}>Nessun enzima selezionato</p>}
+                {selectedEnz.map(e => (
+                  <div key={e.id} className="dose-row">
+                    <div style={{flex:1}}>
+                      <div className="dose-name" style={{fontSize:12}}>{e.nome}</div>
+                      <div className="dose-fam">{e.id} · busta {e.busta||'?'} · {e.ausiliario_tecnologico==='si'?'ausiliario tecn.':'dichiarare'}</div>
+                    </div>
+                    <input type="number" className="input dose-input" min="0" max="0.1" step="0.001"
+                      value={doses[`e_${e.id}`]||0}
+                      onChange={ev=>setDoses(d=>({...d,[`e_${e.id}`]:ev.target.value}))} />
+                    <span className="dose-unit">%</span>
+                    <button onClick={()=>removeEnzima(e.id)} style={{color:'var(--n4)',fontSize:16,padding:'0 4px'}}>×</button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -827,17 +884,34 @@ function BlendBuilder({ data }) {
             <div className="card">
               <div className="card-title">Aggiungi additivo</div>
               <SearchInput value={qAdd} onChange={setQAdd} placeholder="Cerca additivo..." />
-              <div style={{maxHeight:200,overflowY:'auto'}}>
+              <div style={{maxHeight:160,overflowY:'auto'}}>
                 {filteredAdd.map(a => (
                   <div key={a.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 4px',borderBottom:'1px solid var(--n2)',cursor:'pointer'}}
                     onClick={()=>addAdditivo(a)}>
                     <div>
                       <div style={{fontSize:13,fontWeight:500}}>{a.nome}</div>
-                      <div style={{fontSize:11,color:'var(--n5)'}}>{a.categoria}</div>
+                      <div style={{fontSize:11,color:'var(--n5)'}}>{a.categoria} · dose ottim. {a.dose_ottimale_pct||'?'}%</div>
                     </div>
                     <span style={{color:'var(--g6)',fontSize:18}}>+</span>
                   </div>
                 ))}
+              </div>
+
+              <div style={{marginTop:12,paddingTop:10,borderTop:'1px solid var(--n2)'}}>
+                <div style={{fontSize:12,fontWeight:600,color:'var(--b8)',marginBottom:6}}>⚗ Enzimi non-OGM</div>
+                <SearchInput value={qEnz} onChange={setQEnz} placeholder="Cerca enzima..." />
+                <div style={{maxHeight:140,overflowY:'auto'}}>
+                  {filteredEnz.map(e => (
+                    <div key={e.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 4px',borderBottom:'1px solid var(--n2)',cursor:'pointer'}}
+                      onClick={()=>addEnzima(e)}>
+                      <div>
+                        <div style={{fontSize:12,fontWeight:500}}>{e.nome}</div>
+                        <div style={{fontSize:10,color:'var(--n5)'}}>{e.id} · {e.dose_min_pct}-{e.dose_max_pct}% · {e.non_ogm_verificato?.startsWith('da')?<span style={{color:'var(--a6)'}}>⚠ verificare non-OGM</span>:'✓ non-OGM'}</div>
+                      </div>
+                      <span style={{color:'var(--b6)',fontSize:18}}>+</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -974,70 +1048,194 @@ function TDTCalculator() {
 }
 
 // ── MATRICI ───────────────────────────────────────────────────
+function HeatmapMatrice({ current, ingMap, addMap, isAdditivi }) {
+  const [selCella, setSelCella] = useState(null);
+
+  // Raccoglie assi unici
+  const asseA = [...new Set(current.map(r => isAdditivi ? String(r.additivo_id) : String(r.id_a)))].sort();
+  const asseB = [...new Set(current.map(r => isAdditivi ? String(r.ingrediente_id) : String(r.id_b)))].sort();
+
+  // Indice coppie: "a_b" -> record
+  const idx = {};
+  current.forEach(r => {
+    const a = isAdditivi ? String(r.additivo_id) : String(r.id_a);
+    const b = isAdditivi ? String(r.ingrediente_id) : String(r.id_b);
+    idx[`${a}_${b}`] = r;
+    if (!isAdditivi) idx[`${b}_${a}`] = r;
+  });
+
+  const nomeA = (id) => isAdditivi ? (addMap[id]||id) : (ingMap[id]||id);
+  const nomeB = (id) => ingMap[id]||id;
+
+  if (!asseA.length) return <p style={{fontSize:13,color:'var(--n5)',padding:16}}>Nessuna coppia disponibile.</p>;
+
+  return (
+    <div>
+      {selCella && (
+        <div className="card" style={{marginBottom:12,background:'var(--g0)',border:'1px solid var(--g2)'}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
+            <div className={`heatmap-cell hm-${selCella.punteggio||0}`}>{selCella.punteggio||'—'}</div>
+            <strong style={{fontSize:13}}>{nomeA(selCella.a)} × {nomeB(selCella.b)}</strong>
+            {selCella.tipo && <Badge cls={selCella.tipo==='sinergia'?'badge-green':selCella.tipo==='competizione'||selCella.tipo==='attenzione'?'badge-amber':'badge-red'}>{selCella.tipo}</Badge>}
+            <button onClick={()=>setSelCella(null)} style={{marginLeft:'auto',color:'var(--n4)',fontSize:18,padding:'0 4px'}}>×</button>
+          </div>
+          <p style={{fontSize:13,color:'var(--n7)',lineHeight:1.6}}>{selCella.note}</p>
+          {selCella.fonte && <div style={{fontSize:11,color:'var(--n5)',marginTop:6,fontStyle:'italic'}}>{selCella.fonte}</div>}
+        </div>
+      )}
+      <div style={{overflowX:'auto'}}>
+        <table style={{borderCollapse:'separate',borderSpacing:3,fontSize:11}}>
+          <thead>
+            <tr>
+              <th style={{background:'none',border:'none',width:120,maxWidth:120}}></th>
+              {asseB.map(b => (
+                <th key={b} style={{background:'none',border:'none',padding:'0 2px',writingMode:'vertical-rl',textOrientation:'mixed',transform:'rotate(180deg)',height:80,fontWeight:500,color:'var(--n6)',fontSize:10,verticalAlign:'bottom',whiteSpace:'nowrap'}}>
+                  {nomeB(b).substring(0,20)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {asseA.map(a => (
+              <tr key={a}>
+                <td style={{fontSize:11,fontWeight:500,color:'var(--n7)',padding:'2px 8px 2px 0',whiteSpace:'nowrap',maxWidth:120,overflow:'hidden',textOverflow:'ellipsis'}}>
+                  {nomeA(a).substring(0,18)}
+                </td>
+                {asseB.map(b => {
+                  const r = idx[`${a}_${b}`];
+                  const p = r?.punteggio || 0;
+                  const isSelected = selCella?.a===a && selCella?.b===b;
+                  return (
+                    <td key={b} style={{padding:2}}>
+                      {r ? (
+                        <div
+                          className={`heatmap-cell hm-${p}`}
+                          style={{outline: isSelected ? '2px solid var(--g6)' : 'none'}}
+                          title={`${nomeA(a)} × ${nomeB(b)}: ${p}`}
+                          onClick={() => setSelCella(isSelected ? null : {a, b, punteggio:p, note:r.note, fonte:r.fonte, tipo:r.tipo_interazione})}
+                        >
+                          {p}
+                        </div>
+                      ) : (
+                        <div style={{width:32,height:32,borderRadius:4,background:'var(--n1)'}}/>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{display:'flex',gap:12,marginTop:12,flexWrap:'wrap'}}>
+        {[[1,'#fee2e2','#991b1b'],[2,'#fed7aa','#92400e'],[3,'#fef3c7','#92400e'],[4,'#d6efe0','#1a5c38'],[5,'#a8d5b8','#0d2b1a']].map(([p,bg,tc]) => (
+          <div key={p} style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'var(--n6)'}}>
+            <div style={{width:18,height:18,borderRadius:3,background:bg,color:tc,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:600,fontSize:10}}>{p}</div>
+            {p===1?'Critico':p===2?'Attenzione':p===3?'Neutro':p===4?'Buono':'Ottimo'}
+          </div>
+        ))}
+        <div style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'var(--n6)'}}>
+          <div style={{width:18,height:18,borderRadius:3,background:'var(--n1)'}}/>Nessuna coppia
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Matrici({ data }) {
   const { matrici_reol, matrici_chim, matrici_sens, matrici_additivi, ingredienti, additivi } = data;
-  const [tab, setTab] = useState('reol');
-  const [sel, setSel] = useState(null);
+  const [tab, setTab]   = useState('reol');
+  const [vista, setVista] = useState('heatmap');
+  const [sel, setSel]   = useState(null);
+  const [filtroIng, setFiltroIng] = useState('');
 
   const ingMap = Object.fromEntries(ingredienti.map(i=>[String(i.id),i.nome]));
   const addMap = Object.fromEntries(additivi.map(a=>[String(a.id),a.nome]));
 
   const matData = { reol:matrici_reol, chim:matrici_chim, sens:matrici_sens, additivi:matrici_additivi };
-  const current = matData[tab] || [];
   const isAdditivi = tab === 'additivi';
+
+  // Filtra per ingrediente se selezionato
+  const current = useMemo(() => {
+    const base = matData[tab] || [];
+    if (!filtroIng) return base;
+    return base.filter(r => {
+      const a = isAdditivi ? String(r.additivo_id) : String(r.id_a);
+      const b = isAdditivi ? String(r.ingrediente_id) : String(r.id_b);
+      const nA = (isAdditivi ? addMap[a] : ingMap[a]) || '';
+      const nB = ingMap[b] || '';
+      return nA.toLowerCase().includes(filtroIng.toLowerCase()) ||
+             nB.toLowerCase().includes(filtroIng.toLowerCase());
+    });
+  }, [tab, filtroIng, matrici_reol, matrici_chim, matrici_sens, matrici_additivi]);
 
   return (
     <div>
-      <h2 style={{fontSize:16,fontWeight:600,marginBottom:16}}>Matrici di compatibilità</h2>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:10}}>
+        <h2 style={{fontSize:16,fontWeight:600}}>Matrici di compatibilità</h2>
+        <div style={{display:'flex',gap:6}}>
+          <button className={`btn btn-sm ${vista==='heatmap'?'btn-primary':'btn-secondary'}`} onClick={()=>setVista('heatmap')}>⊞ Heatmap</button>
+          <button className={`btn btn-sm ${vista==='lista'?'btn-primary':'btn-secondary'}`} onClick={()=>setVista('lista')}>≡ Lista</button>
+        </div>
+      </div>
+
       <div className="tabs">
         {[['reol','Reologica'],['chim','Chimica'],['sens','Sensoriale'],['additivi','Additivi×Ingredienti']].map(([k,l]) => (
-          <div key={k} className={`tab${tab===k?' active':''}`} onClick={()=>{setTab(k);setSel(null)}}>
+          <div key={k} className={`tab${tab===k?' active':''}`} onClick={()=>{setTab(k);setSel(null);setFiltroIng('');}}>
             {l} <span style={{fontSize:11,color:'var(--n5)',fontFamily:'var(--mono)'}}>({matData[k]?.length||0})</span>
           </div>
         ))}
       </div>
 
-      <div className="card" style={{padding:0}}>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>{isAdditivi?'Additivo':'Ingrediente A'}</th>
-                <th>Ingrediente B</th>
-                {isAdditivi && <th>Tipo</th>}
-                <th>Punteggio</th>
-                <th>Note</th>
-                <th>Fonte</th>
-                <th>Stato</th>
-              </tr>
-            </thead>
-            <tbody>
-              {current.map((r,i) => {
-                const nomeA = isAdditivi ? (addMap[r.additivo_id]||r.additivo_id) : (ingMap[r.id_a]||r.id_a);
-                const nomeB = ingMap[isAdditivi?r.ingrediente_id:r.id_b] || (isAdditivi?r.ingrediente_id:r.id_b);
-                const p = r.punteggio;
-                return (
-                  <tr key={i} style={{cursor:'pointer'}} onClick={()=>setSel(sel===i?null:i)}>
-                    <td style={{fontWeight:500}}>{nomeA}</td>
-                    <td style={{fontWeight:500}}>{nomeB}</td>
-                    {isAdditivi && <td><Badge cls={r.tipo_interazione==='sinergia'?'badge-green':r.tipo_interazione==='attenzione'||r.tipo_interazione==='competizione'?'badge-amber':'badge-red'}>{r.tipo_interazione}</Badge></td>}
-                    <td>
-                      <div className={`heatmap-cell hm-${p||0}`} style={{width:28,height:28}}>
-                        {p||'—'}
-                      </div>
-                    </td>
-                    <td style={{fontSize:12,color:'var(--n6)',maxWidth:200}}>
-                      {sel===i ? r.note : (r.note||'').substring(0,60)+(r.note?.length>60?'…':'')}
-                    </td>
-                    <td style={{fontSize:11,color:'var(--n5)',fontStyle:'italic',maxWidth:120}}>{(r.fonte||'').substring(0,40)}</td>
-                    <td><Badge cls={statoColors[r.stato]}>{r.stato}</Badge></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      <div style={{marginBottom:12}}>
+        <input className="input" style={{maxWidth:280}} placeholder="Filtra per ingrediente/additivo..."
+          value={filtroIng} onChange={e=>setFiltroIng(e.target.value)}/>
+        {filtroIng && <span style={{fontSize:12,color:'var(--n5)',marginLeft:8}}>{current.length} coppie trovate</span>}
       </div>
+
+      {vista === 'heatmap' ? (
+        <div className="card">
+          <HeatmapMatrice current={current} ingMap={ingMap} addMap={addMap} isAdditivi={isAdditivi} />
+        </div>
+      ) : (
+        <div className="card" style={{padding:0}}>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>{isAdditivi?'Additivo':'Ingrediente A'}</th>
+                  <th>Ingrediente B</th>
+                  {isAdditivi && <th>Tipo</th>}
+                  <th>Punteggio</th>
+                  <th>Note</th>
+                  <th>Fonte</th>
+                  <th>Stato</th>
+                </tr>
+              </thead>
+              <tbody>
+                {current.map((r,i) => {
+                  const nomeA = isAdditivi ? (addMap[r.additivo_id]||r.additivo_id) : (ingMap[r.id_a]||r.id_a);
+                  const nomeB = ingMap[isAdditivi?r.ingrediente_id:r.id_b] || (isAdditivi?r.ingrediente_id:r.id_b);
+                  const p = r.punteggio;
+                  return (
+                    <tr key={i} style={{cursor:'pointer'}} onClick={()=>setSel(sel===i?null:i)}>
+                      <td style={{fontWeight:500}}>{nomeA}</td>
+                      <td style={{fontWeight:500}}>{nomeB}</td>
+                      {isAdditivi && <td><Badge cls={r.tipo_interazione==='sinergia'?'badge-green':r.tipo_interazione==='attenzione'||r.tipo_interazione==='competizione'?'badge-amber':'badge-red'}>{r.tipo_interazione}</Badge></td>}
+                      <td><div className={`heatmap-cell hm-${p||0}`} style={{width:28,height:28}}>{p||'—'}</div></td>
+                      <td style={{fontSize:12,color:'var(--n6)',maxWidth:200}}>
+                        {sel===i ? r.note : (r.note||'').substring(0,60)+(r.note?.length>60?'…':'')}
+                      </td>
+                      <td style={{fontSize:11,color:'var(--n5)',fontStyle:'italic',maxWidth:120}}>{(r.fonte||'').substring(0,40)}</td>
+                      <td><Badge cls={statoColors[r.stato]}>{r.stato}</Badge></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
