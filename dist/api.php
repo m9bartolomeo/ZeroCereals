@@ -1,6 +1,6 @@
 <?php
 /**
- * ZeroCereals API v3
+ * ZeroCereals API v5 def
  * Nomenclature v2: fonte, data_aggiornamento, stato normalizzato
  */
 
@@ -101,6 +101,8 @@ function import_table(
         foreach ($r as $k=>$v) {
             if (in_array($k,$skip_f)) continue;
             if ($v===null||$v==='') continue;
+            // Salta campi data con valori non validi
+            if (in_array($k,['data_inserimento','data_aggiornamento','data_verifica','data']) && !preg_match('/^\d{4}-\d{2}-\d{2}/', (string)$v)) continue;
             if (in_array($k,$int_f))   $row[$k]=(int)$v;
             elseif (in_array($k,$float_f)) $row[$k]=(float)$v;
             else $row[$k]=is_array($v)?json_encode($v):(string)$v;
@@ -350,6 +352,104 @@ switch ($action) {
         );
         $stmt->execute($args);
         ok(['log'=>$stmt->fetchAll(),'count'=>$stmt->rowCount()]);
+        break;
+
+
+    // ── IMPORT DEBUG — solo primi 5 ingredienti ──────────────
+    case 'import_debug':
+        $key = $_SERVER['HTTP_X_IMPORT_KEY'] ?? '';
+        if ($key !== IMPORT_KEY) err('Unauthorized', 401);
+        $pdo = get_db();
+        $rows = load_json('ingredienti.json');
+        $rows = array_slice($rows, 0, 3);
+        $n = 0;
+        $errors = [];
+        foreach ($rows as $r) {
+            if (empty($r['id'])) continue;
+            try {
+                $row = ['id' => (int)$r['id'], 'nome' => (string)($r['nome']??'')];
+                if (!empty($r['proteina_g'])) $row['proteina_g'] = (float)$r['proteina_g'];
+                if (!empty($r['stato'])) $row['stato'] = (string)$r['stato'];
+                upsert($pdo, 'ingredienti', $row, 'id');
+                $n++;
+            } catch (Exception $e) {
+                $errors[] = ['id'=>$r['id'],'err'=>$e->getMessage()];
+            }
+        }
+        ok(['test_import_ok'=>$n, 'errors'=>$errors, 'sample_keys'=>array_keys($rows[0]??[])]);
+        break;
+
+
+    // ── IMPORT STEP — una tabella alla volta ─────────────────
+    case 'import_step':
+        $key = $_SERVER['HTTP_X_IMPORT_KEY'] ?? '';
+        if ($key !== IMPORT_KEY) err('Unauthorized', 401);
+        $step = $_GET['step'] ?? 'ingredienti';
+        $pdo = get_db();
+        $res = [];
+
+        if ($step === 'ingredienti') {
+            $res['ingredienti'] = import_table($pdo,'ingredienti.json','ingredienti','id',
+                ['id','ig','ig_crudo','ig_cotto','assorbimento_idrico_pct','temp_gel_c','fitati_post_attivazione_pct','attivato'],
+                ['proteina_g','amido_g','carboidrati_g','amido_puro_g','lipidi_g','fibra_g','fibra_solubile_g','fibra_insolubile_g','zuccheri_g','kcal','acido_fitico_mg','amido_resistente_g','inulina_g','beta_glucani_g','calcio_mg','ferro_mg','magnesio_mg','potassio_mg','ph_nativo'],
+                ['data_inserimento','data_aggiornamento']
+            );
+        } elseif ($step === 'ig_per_stato') {
+            $rows = load_json('ig_per_stato.json'); $n=0;
+            foreach ($rows as $r) {
+                if (empty($r['ingrediente_id'])||empty($r['stato_processo'])) continue;
+                $pdo->prepare("INSERT INTO ingredienti_ig_per_stato (ingrediente_id,stato_processo,ig_valore,ig_fonte,note) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE ig_valore=VALUES(ig_valore),ig_fonte=VALUES(ig_fonte),note=VALUES(note)"
+                )->execute([(int)$r['ingrediente_id'],$r['stato_processo'],isset($r['ig_valore'])?(int)$r['ig_valore']:null,$r['ig_fonte']??null,$r['note']??null]);
+                $n++;
+            }
+            $res['ig_per_stato'] = $n;
+        } elseif ($step === 'additivi') {
+            $res['additivi'] = import_table($pdo,'additivi.json','additivi','id',
+                ['ig'],['dose_min_pct','dose_max_pct','dose_ottimale_pct'],['data_inserimento','data_aggiornamento']
+            );
+        } elseif ($step === 'blend') {
+            $res['blend'] = import_table($pdo,'blend.json','blend','id',
+                ['score_struttura','score_sapore','score_lievitazione','score_shelflife','ig_stimato','idratazione_min','idratazione_max'],
+                ['proteine_g'],['data_inserimento']
+            );
+        } elseif ($step === 'matrici_reol') {
+            $rows=load_json('matrici_reol.json'); $n=0;
+            foreach ($rows as $r) {
+                if (empty($r['id_a'])||empty($r['id_b'])) continue;
+                $pdo->prepare("INSERT INTO matrici_reol (id_a,id_b,punteggio,note,fonte,stato) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE punteggio=VALUES(punteggio),note=VALUES(note)"
+                )->execute([(int)$r['id_a'],(int)$r['id_b'],isset($r['punteggio'])?(int)$r['punteggio']:null,$r['note']??null,$r['fonte']??null,$r['stato']??'stima']);
+                $n++;
+            }
+            $res['matrici_reol'] = $n;
+        } elseif ($step === 'matrici_chim') {
+            $rows=load_json('matrici_chim.json'); $n=0;
+            foreach ($rows as $r) {
+                if (empty($r['id_a'])||empty($r['id_b'])) continue;
+                $pdo->prepare("INSERT INTO matrici_chim (id_a,id_b,punteggio,note,fonte,stato) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE punteggio=VALUES(punteggio),note=VALUES(note)"
+                )->execute([(int)$r['id_a'],(int)$r['id_b'],isset($r['punteggio'])?(int)$r['punteggio']:null,$r['note']??null,$r['fonte']??null,$r['stato']??'stima']);
+                $n++;
+            }
+            $res['matrici_chim'] = $n;
+        } elseif ($step === 'matrici_sens') {
+            $rows=load_json('matrici_sens.json'); $n=0;
+            foreach ($rows as $r) {
+                if (empty($r['id_a'])||empty($r['id_b'])) continue;
+                $pdo->prepare("INSERT INTO matrici_sens (id_a,id_b,punteggio,note,fonte,stato) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE punteggio=VALUES(punteggio),note=VALUES(note)"
+                )->execute([(int)$r['id_a'],(int)$r['id_b'],isset($r['punteggio'])?(int)$r['punteggio']:null,$r['note']??null,$r['fonte']??null,$r['stato']??'stima']);
+                $n++;
+            }
+            $res['matrici_sens'] = $n;
+        } elseif ($step === 'matrici_additivi') {
+            $rows=load_json('matrici_additivi.json'); $n=0;
+            foreach ($rows as $r) {
+                if (empty($r['additivo_id'])||empty($r['ingrediente_id'])) continue;
+                $pdo->prepare("INSERT INTO matrici_additivi_ingredienti (additivo_id,ingrediente_id,tipo_interazione,punteggio,note,fonte,stato) VALUES (?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE tipo_interazione=VALUES(tipo_interazione),punteggio=VALUES(punteggio),note=VALUES(note)"
+                )->execute([$r['additivo_id'],(int)$r['ingrediente_id'],$r['tipo_interazione']??null,isset($r['punteggio'])?(int)$r['punteggio']:null,$r['note']??null,$r['fonte']??null,$r['stato']??'stima']);
+                $n++;
+            }
+            $res['matrici_additivi'] = $n;
+        }
+        ok(['step'=>$step,'result'=>$res]);
         break;
 
     default:
