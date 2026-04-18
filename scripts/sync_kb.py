@@ -28,8 +28,16 @@ def connect_sheet():
 
 def export_tab(sh, tab_name, filename):
     try:
-        ws   = sh.worksheet(tab_name)
-        rows = ws.get_all_records()
+        ws = sh.worksheet(tab_name)
+        headers = ws.row_values(1)
+        all_values = ws.get_all_values()
+        rows = []
+        for row in all_values[1:]:
+            if not any(row):
+                continue
+            # Padda la riga se ha meno colonne degli header
+            padded = row + [''] * (len(headers) - len(row))
+            rows.append(dict(zip(headers, padded)))
         path = f"{DIST_DIR}/data/{filename}"
         with open(path, "w", encoding="utf-8") as f:
             json.dump(rows, f, ensure_ascii=False, default=str)
