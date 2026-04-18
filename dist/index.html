@@ -530,7 +530,7 @@ function AdditivisDetail({ add, onBack, onAddToBlend }) {
           <div className="card-title">Note tecniche e interazioni</div>
           {add.meccanismo && <div style={{marginBottom:10}}><div style={{fontSize:11,color:'var(--n5)',marginBottom:4}}>Meccanismo</div><p style={{fontSize:13,color:'var(--n7)',lineHeight:1.6}}>{add.meccanismo}</p></div>}
           {add.interazione_critica && <div style={{background:'var(--a0)',border:'1px solid var(--a1)',borderRadius:6,padding:'8px 10px',marginTop:8}}><div style={{fontSize:11,fontWeight:600,color:'var(--a8)',marginBottom:4}}>⚠ Interazioni critiche</div><p style={{fontSize:12,color:'var(--a8)',lineHeight:1.5}}>{add.interazione_critica}</p></div>}
-          {{add.note_tecniche && <div style={{marginTop:10}}><div style={{fontSize:11,color:'var(--n5)',marginBottom:4}}>Note tecniche</div><p style={{fontSize:12,color:'var(--n7)',lineHeight:1.6}}>{add.note_tecniche}</p></div>}
+          {add.note_tecniche && <div style={{marginTop:10}}><div style={{fontSize:11,color:'var(--n5)',marginBottom:4}}>Note tecniche</div><p style={{fontSize:12,color:'var(--n7)',lineHeight:1.6}}>{add.note_tecniche}</p></div>}
           {add.id==='U04' && (
             <div style={{marginTop:8,padding:'6px 10px',background:'var(--a0)',border:'1px solid var(--a1)',borderRadius:6,fontSize:12,color:'var(--a8)'}}>
               ⚠ <strong>Sostituito con EVO</strong> — decisione presa in CF-PAN-001 v2.0. Aggiornare le schede produzione se ancora indicato Ghee.
@@ -1005,7 +1005,7 @@ function HeatmapMatrice({ current, ingMap, addMap, isAdditivi }) {
             <div className={`heatmap-cell hm-${selCella.punteggio||0}`}>{selCella.punteggio||'—'}</div>
             <strong style={{fontSize:13}}>{nomeA(selCella.a)} × {nomeB(selCella.b)}</strong>
             {selCella.tipo && <Badge cls={selCella.tipo==='sinergia'?'badge-green':selCella.tipo==='competizione'||selCella.tipo==='attenzione'?'badge-amber':'badge-red'}>{selCella.tipo}</Badge>}
-            {selCella.affidabilita && <Badge cls={selCella.affidabilita==='A'?'badge-green':selCella.affidabilita==='M'?'badge-amber':'badge-red'} title="Affidabilità: A=fonte diretta, M=analogia, B=stima">Aff. {selCella.affidabilita}</Badge>}
+            {selCella.affidabilita && <Badge cls={selCella.affidabilita==='A'?'badge-green':selCella.affidabilita==='M'?'badge-amber':'badge-red'}>Aff. {selCella.affidabilita}</Badge>}
             <button onClick={()=>setSelCella(null)} style={{marginLeft:'auto',color:'var(--n4)',fontSize:18,padding:'0 4px'}}>×</button>
           </div>
           <p style={{fontSize:13,color:'var(--n7)',lineHeight:1.6}}>{selCella.note}</p>
