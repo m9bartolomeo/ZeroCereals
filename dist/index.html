@@ -189,7 +189,6 @@ const BASE = 'https://rd.metodonove.com';
 const API  = `${BASE}/api.php`;
 const DATA = `${BASE}/data`;
 
-// ── DATA FETCHING ──────────────────────────────────────────────
 function useData() {
   const [data, setData] = useState({
     ingredienti: [], additivi: [], blend: [],
@@ -226,7 +225,6 @@ function useData() {
   return { data, loading, error, refresh };
 }
 
-// ── HELPERS ───────────────────────────────────────────────────
 const famColors = {
   legume:'badge-green', pseudo:'badge-blue', amido:'badge-gray',
   frutta:'badge-amber', seme:'badge-amber', legante:'badge-gray',
@@ -236,7 +234,6 @@ const statoColors = {
   verificato:'badge-green', stima:'badge-amber',
   da_completare:'badge-red', sperimentale:'badge-blue',
 };
-const mktColors = { alto:'alto', medio:'medio', basso:'basso' };
 
 function Badge({ children, cls }) {
   return <span className={`badge ${cls||'badge-gray'}`}>{children}</span>;
@@ -266,7 +263,6 @@ function SearchInput({ value, onChange, placeholder }) {
   );
 }
 
-// ── NAV ───────────────────────────────────────────────────────
 const MODULES = [
   { id:'dashboard', label:'Dashboard', icon:'◉' },
   { id:'ingredienti', label:'Ingredienti', icon:'◈' },
@@ -278,11 +274,9 @@ const MODULES = [
   { id:'operativa', label:'Scheda terzista', icon:'◻' },
 ];
 
-// ── DASHBOARD ─────────────────────────────────────────────────
 function Dashboard({ data }) {
   const { ingredienti, additivi, blend, matrici_reol, prove_doe, meta } = data;
   const verified = ingredienti.filter(i => i.stato === 'verificato').length;
-  const highMkt  = ingredienti.filter(i => i.potenziale_marketing === 'alto').length;
   const claimEU  = ingredienti.filter(i => i.claim_salutistico_eu &&
     i.claim_salutistico_eu.includes('432/2012')).length;
   const doeFormali = prove_doe.filter(p => p.stato === 'doe_formale').length;
@@ -298,30 +292,12 @@ function Dashboard({ data }) {
           </p>
         )}
       </div>
-
       <div className="grid-4" style={{marginBottom:16}}>
-        <div className="card stat">
-          <div className="stat-label">Ingredienti</div>
-          <div className="stat-value">{ingredienti.length}</div>
-          <div className="stat-sub">{verified} verificati</div>
-        </div>
-        <div className="card stat">
-          <div className="stat-label">Additivi + Enzimi</div>
-          <div className="stat-value">{additivi.length}</div>
-          <div className="stat-sub">{additivi.filter(a=>a.categoria==='enzima').length} enzimi</div>
-        </div>
-        <div className="card stat">
-          <div className="stat-label">Blend</div>
-          <div className="stat-value">{blend.length}</div>
-          <div className="stat-sub">{blend.filter(b=>b.stato==='verificato').length} verificati</div>
-        </div>
-        <div className="card stat">
-          <div className="stat-label">Coppie matrici</div>
-          <div className="stat-value">{matrici_reol.length}</div>
-          <div className="stat-sub">reol/chim/sens</div>
-        </div>
+        <div className="card stat"><div className="stat-label">Ingredienti</div><div className="stat-value">{ingredienti.length}</div><div className="stat-sub">{verified} verificati</div></div>
+        <div className="card stat"><div className="stat-label">Additivi + Enzimi</div><div className="stat-value">{additivi.length}</div><div className="stat-sub">{additivi.filter(a=>a.categoria==='enzima').length} enzimi</div></div>
+        <div className="card stat"><div className="stat-label">Blend</div><div className="stat-value">{blend.length}</div><div className="stat-sub">{blend.filter(b=>b.stato==='verificato').length} verificati</div></div>
+        <div className="card stat"><div className="stat-label">Coppie matrici</div><div className="stat-value">{matrici_reol.length}</div><div className="stat-sub">reol/chim/sens</div></div>
       </div>
-
       <div className="grid-2" style={{marginBottom:16}}>
         <div className="card">
           <div className="card-title"><span className="card-title-icon">◆</span>Potenziale marketing</div>
@@ -329,97 +305,57 @@ function Dashboard({ data }) {
             {['alto','medio','basso'].map(l => (
               <div className="stat" key={l}>
                 <div className="stat-label">{l.charAt(0).toUpperCase()+l.slice(1)}</div>
-                <div className="stat-value">
-                  {ingredienti.filter(i=>i.potenziale_marketing===l).length}
-                </div>
+                <div className="stat-value">{ingredienti.filter(i=>i.potenziale_marketing===l).length}</div>
               </div>
             ))}
           </div>
           <div style={{marginTop:12,paddingTop:12,borderTop:'1px solid var(--n2)'}}>
-            <div style={{display:'flex',justifyContent:'space-between',fontSize:13}}>
-              <span style={{color:'var(--n6)'}}>Novità mercato GDO</span>
-              <strong>{ingredienti.filter(i=>i.novita_mercato==='si').length}</strong>
-            </div>
-            <div style={{display:'flex',justifyContent:'space-between',fontSize:13,marginTop:4}}>
-              <span style={{color:'var(--n6)'}}>Claim EU approvati</span>
-              <strong>{claimEU}</strong>
-            </div>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:13}}><span style={{color:'var(--n6)'}}>Novità mercato GDO</span><strong>{ingredienti.filter(i=>i.novita_mercato==='si').length}</strong></div>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:13,marginTop:4}}><span style={{color:'var(--n6)'}}>Claim EU approvati</span><strong>{claimEU}</strong></div>
           </div>
         </div>
-
         <div className="card">
           <div className="card-title"><span className="card-title-icon">◎</span>Piano DoE</div>
           <div className="grid-2">
-            <div className="stat">
-              <div className="stat-label">Esplorative</div>
-              <div className="stat-value">{doeEspl}</div>
-              <div className="stat-sub">/ 6 previste</div>
-            </div>
-            <div className="stat">
-              <div className="stat-label">Formali</div>
-              <div className="stat-value">{doeFormali}</div>
-              <div className="stat-sub">/ 8 previste</div>
-            </div>
+            <div className="stat"><div className="stat-label">Esplorative</div><div className="stat-value">{doeEspl}</div><div className="stat-sub">/ 6 previste</div></div>
+            <div className="stat"><div className="stat-label">Formali</div><div className="stat-value">{doeFormali}</div><div className="stat-sub">/ 8 previste</div></div>
           </div>
           <div style={{marginTop:12}}>
             <div style={{fontSize:12,color:'var(--n6)',marginBottom:4}}>Progresso prove formali</div>
-            <div className="ig-bar" style={{height:8}}>
-              <div className="ig-fill" style={{
-                width:`${Math.min(100,(doeFormali/8)*100)}%`,
-                background:'var(--g6)'
-              }}/>
-            </div>
-            <div style={{fontSize:11,color:'var(--n5)',marginTop:3,fontFamily:'var(--mono)'}}>
-              {doeFormali}/8 ({Math.round((doeFormali/8)*100)}%)
-            </div>
+            <div className="ig-bar" style={{height:8}}><div className="ig-fill" style={{width:`${Math.min(100,(doeFormali/8)*100)}%`,background:'var(--g6)'}}/></div>
+            <div style={{fontSize:11,color:'var(--n5)',marginTop:3,fontFamily:'var(--mono)'}}>{doeFormali}/8 ({Math.round((doeFormali/8)*100)}%)</div>
           </div>
         </div>
       </div>
-
       <div className="card">
         <div className="card-title"><span className="card-title-icon">◉</span>Note pre-DoE — da leggere prima di ogni sessione</div>
-        <Alert type="amber">
-          <strong>IG amidi da cotti:</strong> tapioca 94, fecola 98, mais waxy 99. IG blend pane base da cotto ~55-60. Non usare valori crudi per claim nutrizionali.
-        </Alert>
-        <Alert type="amber">
-          <strong>GOX E03:</strong> se emerge texture gommosa eccessiva, inserire GOX 0.004% come variabile di controllo prima di modificare le variabili DoE.
-        </Alert>
-        <Alert type="green">
-          <strong>Fitasi E06:</strong> inserire 0.02% in fase D-1 durante ammollo ceci — migliora biodisponibilità Fe/Zn/Ca/Mg senza alterare ricetta. Segnare se usata in ogni prova.
-        </Alert>
+        <Alert type="amber"><strong>IG amidi da cotti:</strong> tapioca 94, fecola 98, mais waxy 99. IG blend pane base da cotto ~55-60. Non usare valori crudi per claim nutrizionali.</Alert>
+        <Alert type="amber"><strong>GOX E03:</strong> se emerge texture gommosa eccessiva, inserire GOX 0.004% come variabile di controllo prima di modificare le variabili DoE.</Alert>
+        <Alert type="green"><strong>Fitasi E06:</strong> inserire 0.02% in fase D-1 durante ammollo ceci — migliora biodisponibilità Fe/Zn/Ca/Mg senza alterare ricetta. Segnare se usata in ogni prova.</Alert>
       </div>
     </div>
   );
 }
 
-// ── INGREDIENTI ───────────────────────────────────────────────
-function Ingredienti({ data }) {
+function Ingredienti({ data, onAddToBlend }) {
   const { ingredienti, ig_per_stato } = data;
-  const [q, setQ]       = useState('');
-  const [fam, setFam]   = useState('');
-  const [sel, setSel]   = useState(null);
-
+  const [q, setQ] = useState('');
+  const [fam, setFam] = useState('');
+  const [sel, setSel] = useState(null);
   const famiglie = [...new Set(ingredienti.map(i => i.famiglia))].sort();
   const filtered = ingredienti.filter(i => {
-    const match = !q || i.nome.toLowerCase().includes(q.toLowerCase()) ||
-      (i.nome_latino||'').toLowerCase().includes(q.toLowerCase());
-    const famOk = !fam || i.famiglia === fam;
-    return match && famOk;
+    const match = !q || i.nome.toLowerCase().includes(q.toLowerCase()) || (i.nome_latino||'').toLowerCase().includes(q.toLowerCase());
+    return match && (!fam || i.famiglia === fam);
   });
-
   const igStati = sel ? ig_per_stato.filter(r => String(r.ingrediente_id) === String(sel.id)) : [];
-
-  if (sel) return <IngredienteDetail ing={sel} igStati={igStati} onBack={() => setSel(null)} />;
-
+  if (sel) return <IngredienteDetail ing={sel} igStati={igStati} onBack={() => setSel(null)} onAddToBlend={onAddToBlend} />;
   return (
     <div>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
         <h2 style={{fontSize:16,fontWeight:600}}>Ingredienti <span style={{color:'var(--n5)',fontWeight:400,fontSize:13}}>({filtered.length}/{ingredienti.length})</span></h2>
       </div>
       <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap'}}>
-        <div style={{flex:1,minWidth:200}}>
-          <SearchInput value={q} onChange={setQ} placeholder="Cerca ingrediente o nome latino..." />
-        </div>
+        <div style={{flex:1,minWidth:200}}><SearchInput value={q} onChange={setQ} placeholder="Cerca ingrediente o nome latino..." /></div>
         <select className="input" style={{width:'auto'}} value={fam} onChange={e=>setFam(e.target.value)}>
           <option value="">Tutte le famiglie</option>
           {famiglie.map(f => <option key={f} value={f}>{f}</option>)}
@@ -428,26 +364,11 @@ function Ingredienti({ data }) {
       <div className="card" style={{padding:0}}>
         <div className="table-wrap">
           <table>
-            <thead>
-              <tr>
-                <th>Ingrediente</th>
-                <th>Famiglia</th>
-                <th>Prot.</th>
-                <th>IG crudo</th>
-                <th>IG cotto</th>
-                <th>Assorbimento</th>
-                <th>Busta</th>
-                <th>Stato</th>
-                <th>Mkt</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Ingrediente</th><th>Famiglia</th><th>Prot.</th><th>IG crudo</th><th>IG cotto</th><th>Assorbimento</th><th>Busta</th><th>Stato</th><th>Mkt</th></tr></thead>
             <tbody>
               {filtered.map(i => (
                 <tr key={i.id} style={{cursor:'pointer'}} onClick={() => setSel(i)}>
-                  <td>
-                    <div style={{fontWeight:500,color:'var(--n9)'}}>{i.nome}</div>
-                    {i.nome_latino && <div style={{fontSize:11,color:'var(--n5)',fontStyle:'italic'}}>{i.nome_latino}</div>}
-                  </td>
+                  <td><div style={{fontWeight:500,color:'var(--n9)'}}>{i.nome}</div>{i.nome_latino && <div style={{fontSize:11,color:'var(--n5)',fontStyle:'italic'}}>{i.nome_latino}</div>}</td>
                   <td><Badge cls={famColors[i.famiglia]}>{i.famiglia}</Badge></td>
                   <td className="td-mono">{i.proteina_g||'—'}</td>
                   <td className="td-mono">{i.ig_crudo||'—'}</td>
@@ -466,53 +387,40 @@ function Ingredienti({ data }) {
   );
 }
 
-function IngredienteDetail({ ing, igStati, onBack }) {
+function IngredienteDetail({ ing, igStati, onBack, onAddToBlend }) {
   return (
     <div>
-      <button className="btn btn-secondary btn-sm" onClick={onBack} style={{marginBottom:16}}>
-        ← Torna alla lista
-      </button>
+      <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
+        <button className="btn btn-secondary btn-sm" onClick={onBack}>← Torna alla lista</button>
+        {onAddToBlend && (<button className="btn btn-primary btn-sm" onClick={()=>{onAddToBlend(ing);onBack();}}>⊕ Aggiungi al Blend Builder</button>)}
+      </div>
       <div style={{display:'flex',alignItems:'baseline',gap:10,marginBottom:16,flexWrap:'wrap'}}>
         <h2 style={{fontSize:18,fontWeight:600}}>{ing.nome}</h2>
         <span style={{fontSize:13,fontStyle:'italic',color:'var(--n5)'}}>{ing.nome_latino}</span>
         <Badge cls={famColors[ing.famiglia]}>{ing.famiglia}</Badge>
         <Badge cls={statoColors[ing.stato]}>{ing.stato}</Badge>
       </div>
-
       <div className="grid-2">
         <div className="card">
           <div className="card-title">Macronutrienti (per 100g)</div>
-          {[['Proteine',ing.proteina_g,'g'],['Carboidrati',ing.carboidrati_g,'g'],
-            ['Amido puro',ing.amido_puro_g,'g'],['Lipidi',ing.lipidi_g,'g'],
-            ['Fibra totale',ing.fibra_g,'g'],['Fibra solubile',ing.fibra_solubile_g,'g'],
-            ['Zuccheri',ing.zuccheri_g,'g'],['Energia',ing.kcal,'kcal'],
-          ].map(([l,v,u]) => v ? (
+          {[['Proteine',ing.proteina_g,'g'],['Carboidrati',ing.carboidrati_g,'g'],['Amido puro',ing.amido_puro_g,'g'],['Lipidi',ing.lipidi_g,'g'],['Fibra totale',ing.fibra_g,'g'],['Fibra solubile',ing.fibra_solubile_g,'g'],['Zuccheri',ing.zuccheri_g,'g'],['Energia',ing.kcal,'kcal']].map(([l,v,u]) => v ? (
             <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid var(--n2)',fontSize:13}}>
-              <span style={{color:'var(--n6)'}}>{l}</span>
-              <span style={{fontFamily:'var(--mono)',fontWeight:500}}>{v} {u}</span>
+              <span style={{color:'var(--n6)'}}>{l}</span><span style={{fontFamily:'var(--mono)',fontWeight:500}}>{v} {u}</span>
             </div>
           ) : null)}
         </div>
-
         <div className="card">
           <div className="card-title">Parametri tecnologici</div>
-          {[['pH nativo',ing.ph_nativo,''],['pH impasto',ing.ph_impasto,''],
-            ['Temp. gel.',ing.temp_gel_c,'°C'],['Assorbimento',ing.assorbimento_idrico_pct,'%'],
-            ['Viscosità gel',ing.viscosita_gel,''],['Protocollo terzista',ing.protocollo_terzista,''],
-            ['Busta consigliata',ing.busta_consigliata,''],
-          ].map(([l,v,u]) => v ? (
+          {[['pH nativo',ing.ph_nativo,''],['pH impasto',ing.ph_impasto,''],['Temp. gel.',ing.temp_gel_c,'°C'],['Assorbimento',ing.assorbimento_idrico_pct,'%'],['Viscosità gel',ing.viscosita_gel,''],['Protocollo terzista',ing.protocollo_terzista,''],['Busta consigliata',ing.busta_consigliata,'']].map(([l,v,u]) => v ? (
             <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid var(--n2)',fontSize:13}}>
-              <span style={{color:'var(--n6)'}}>{l}</span>
-              <span style={{fontFamily:'var(--mono)',fontWeight:500}}>{v}{u}</span>
+              <span style={{color:'var(--n6)'}}>{l}</span><span style={{fontFamily:'var(--mono)',fontWeight:500}}>{v}{u}</span>
             </div>
           ) : null)}
         </div>
-
         <div className="card">
           <div className="card-title">Indice glicemico per stato</div>
           {ing.ig_crudo !== undefined && (
             <div style={{marginBottom:8}}>
-              <div style={{fontSize:12,color:'var(--n5)',marginBottom:4}}>Da ingredienti.json</div>
               <div style={{display:'flex',gap:16}}>
                 {ing.ig_crudo && <div><div className="stat-label">IG crudo</div><div style={{fontSize:20,fontWeight:600,fontFamily:'var(--mono)'}}>{ing.ig_crudo}</div></div>}
                 {ing.ig_cotto && <div><div className="stat-label">IG cotto</div><div style={{fontSize:20,fontWeight:600,fontFamily:'var(--mono)',color:ing.ig_cotto>55?'var(--r8)':'var(--g8)'}}>{ing.ig_cotto}</div></div>}
@@ -535,52 +443,27 @@ function IngredienteDetail({ ing, igStati, onBack }) {
             </div>
           )}
         </div>
-
         <div className="card">
           <div className="card-title">Profilo anti-infiammatorio</div>
-          {[['Lectine presenti',ing.lectine_presenti],['Prolammine presenti',ing.prolammine_presenti],
-            ['Acido fitico',ing.acido_fitico_mg ? `${ing.acido_fitico_mg} mg/100g` : null],
-            ['Fitati post-attivazione',ing.fitati_post_attivazione_pct ? `${ing.fitati_post_attivazione_pct}%` : null],
-            ['Amido resistente',ing.amido_resistente_g ? `${ing.amido_resistente_g} g` : null],
-            ['Inulina',ing.inulina_g ? `${ing.inulina_g} g` : null],
-            ['Beta-glucani',ing.beta_glucani_g ? `${ing.beta_glucani_g} g` : null],
-          ].map(([l,v]) => v ? (
+          {[['Lectine presenti',ing.lectine_presenti],['Prolammine presenti',ing.prolammine_presenti],['Acido fitico',ing.acido_fitico_mg?`${ing.acido_fitico_mg} mg/100g`:null],['Fitati post-attivazione',ing.fitati_post_attivazione_pct?`${ing.fitati_post_attivazione_pct}%`:null],['Amido resistente',ing.amido_resistente_g?`${ing.amido_resistente_g} g`:null],['Inulina',ing.inulina_g?`${ing.inulina_g} g`:null],['Beta-glucani',ing.beta_glucani_g?`${ing.beta_glucani_g} g`:null]].map(([l,v]) => v ? (
             <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid var(--n2)',fontSize:13}}>
-              <span style={{color:'var(--n6)'}}>{l}</span>
-              <span style={{fontFamily:'var(--mono)',fontWeight:500}}>{v}</span>
+              <span style={{color:'var(--n6)'}}>{l}</span><span style={{fontFamily:'var(--mono)',fontWeight:500}}>{v}</span>
             </div>
           ) : null)}
         </div>
       </div>
-
       {(ing.storia_ingrediente || ing.claim_salutistico_eu) && (
         <div className="card" style={{marginTop:16}}>
           <div className="card-title">Layer marketing</div>
           <div className="grid-2">
-            {ing.storia_ingrediente && (
-              <div>
-                <div style={{fontSize:12,color:'var(--n5)',marginBottom:6}}>Storia ingrediente</div>
-                <p style={{fontSize:13,color:'var(--n7)',lineHeight:1.6}}>{ing.storia_ingrediente}</p>
-              </div>
-            )}
+            {ing.storia_ingrediente && <div><div style={{fontSize:12,color:'var(--n5)',marginBottom:6}}>Storia ingrediente</div><p style={{fontSize:13,color:'var(--n7)',lineHeight:1.6}}>{ing.storia_ingrediente}</p></div>}
             <div>
-              {ing.claim_salutistico_eu && (
-                <div style={{marginBottom:10}}>
-                  <div style={{fontSize:12,color:'var(--n5)',marginBottom:6}}>Claim UE 432/2012</div>
-                  <p style={{fontSize:13,color:'var(--b8)',lineHeight:1.6}}>{ing.claim_salutistico_eu}</p>
-                </div>
-              )}
-              {ing.certificazioni_possibili && (
-                <div>
-                  <div style={{fontSize:12,color:'var(--n5)',marginBottom:4}}>Certificazioni possibili</div>
-                  <p style={{fontSize:13,color:'var(--n7)'}}>{ing.certificazioni_possibili}</p>
-                </div>
-              )}
+              {ing.claim_salutistico_eu && <div style={{marginBottom:10}}><div style={{fontSize:12,color:'var(--n5)',marginBottom:6}}>Claim UE 432/2012</div><p style={{fontSize:13,color:'var(--b8)',lineHeight:1.6}}>{ing.claim_salutistico_eu}</p></div>}
+              {ing.certificazioni_possibili && <div><div style={{fontSize:12,color:'var(--n5)',marginBottom:4}}>Certificazioni possibili</div><p style={{fontSize:13,color:'var(--n7)'}}>{ing.certificazioni_possibili}</p></div>}
             </div>
           </div>
         </div>
       )}
-
       {ing.note_tecnologiche && (
         <div className="card" style={{marginTop:16}}>
           <div className="card-title">Note tecnologiche</div>
@@ -592,27 +475,79 @@ function IngredienteDetail({ ing, igStati, onBack }) {
   );
 }
 
-// ── ADDITIVI ──────────────────────────────────────────────────
-function Additivi({ data }) {
+const catColors = {
+  antiossidante: 'badge-amber', umettante: 'badge-green',
+  'conservante naturale': 'badge-green', 'miglioratore strutturale': 'badge-blue',
+  enzima: 'badge-blue', lievitante: 'badge-red', sale: 'badge-gray',
+  spezia: 'badge-amber', dolcificante: 'badge-amber',
+};
+
+function AdditivisDetail({ add, onBack, onAddToBlend }) {
+  return (
+    <div>
+      <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
+        <button className="btn btn-secondary btn-sm" onClick={onBack}>← Torna alla lista</button>
+        {add.categoria !== 'lievitante' && (<button className="btn btn-primary btn-sm" onClick={()=>onAddToBlend(add)}>⊕ Aggiungi al Blend Builder</button>)}
+      </div>
+      <div style={{display:'flex',alignItems:'baseline',gap:10,marginBottom:16,flexWrap:'wrap'}}>
+        <span style={{fontFamily:'var(--mono)',fontSize:13,color:'var(--n5)'}}>{add.id}</span>
+        <h2 style={{fontSize:18,fontWeight:600}}>{add.nome}</h2>
+        <Badge cls={catColors[add.categoria]||'badge-gray'}>{add.categoria}</Badge>
+        <Badge cls={statoColors[add.stato]}>{add.stato}</Badge>
+      </div>
+      <div className="grid-2">
+        <div className="card">
+          <div className="card-title">Parametri tecnologici</div>
+          {[['Funzione primaria',add.funzione_primaria],['Dose minima',add.dose_min_pct?`${add.dose_min_pct}%`:null],['Dose massima',add.dose_max_pct?`${add.dose_max_pct}%`:null],['Dose ottimale',add.dose_ottimale_pct?`${add.dose_ottimale_pct}%`:null],['Busta',add.busta],['IG',add.ig!==undefined&&add.ig!==null?String(add.ig):null],['Effetto pH',add.ph_effetto],['In etichetta',add.in_etichetta],['Ausiliario tecnologico',add.ausiliario_tecnologico],['Non-OGM',add.non_ogm_verificato],['Shelf life',add.shelf_life]].map(([l,v]) => v ? (
+            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid var(--n2)',fontSize:13,gap:8}}>
+              <span style={{color:'var(--n6)',flexShrink:0}}>{l}</span><span style={{fontWeight:500,textAlign:'right'}}>{v}</span>
+            </div>
+          ) : null)}
+        </div>
+        <div className="card">
+          <div className="card-title">Note tecniche e interazioni</div>
+          {add.meccanismo && <div style={{marginBottom:10}}><div style={{fontSize:11,color:'var(--n5)',marginBottom:4}}>Meccanismo</div><p style={{fontSize:13,color:'var(--n7)',lineHeight:1.6}}>{add.meccanismo}</p></div>}
+          {add.interazione_critica && <div style={{background:'var(--a0)',border:'1px solid var(--a1)',borderRadius:6,padding:'8px 10px',marginTop:8}}><div style={{fontSize:11,fontWeight:600,color:'var(--a8)',marginBottom:4}}>⚠ Interazioni critiche</div><p style={{fontSize:12,color:'var(--a8)',lineHeight:1.5}}>{add.interazione_critica}</p></div>}
+          {add.note_tecniche && <div style={{marginTop:10}}><div style={{fontSize:11,color:'var(--n5)',marginBottom:4}}>Note tecniche</div><p style={{fontSize:12,color:'var(--n7)',lineHeight:1.6}}>{add.note_tecniche}</p></div>}
+        </div>
+        {(add.storia_additivo||add.claim_salutistico_eu) && (
+          <div className="card">
+            <div className="card-title">Layer marketing</div>
+            {add.storia_additivo && <div style={{marginBottom:10}}><div style={{fontSize:11,color:'var(--n5)',marginBottom:4}}>Storia</div><p style={{fontSize:13,color:'var(--n7)',lineHeight:1.6}}>{add.storia_additivo}</p></div>}
+            {add.claim_salutistico_eu && <div style={{background:'var(--b0)',border:'1px solid var(--b1)',borderRadius:6,padding:'8px 10px',marginTop:8}}><div style={{fontSize:11,fontWeight:600,color:'var(--b8)',marginBottom:4}}>Claim EU</div><p style={{fontSize:12,color:'var(--b8)',lineHeight:1.5}}>{add.claim_salutistico_eu}</p></div>}
+            {add.certificazioni_possibili && <div style={{marginTop:8,fontSize:12,color:'var(--n6)'}}><strong>Certificazioni:</strong> {add.certificazioni_possibili}</div>}
+          </div>
+        )}
+        {(add.claim_eu_verificato||add.note_approvvigionamento||add.approvvigionamento) && (
+          <div className="card">
+            <div className="card-title">BI — Approvvigionamento</div>
+            {add.approvvigionamento && <div style={{marginBottom:8}}><Badge cls={add.approvvigionamento==='facile'?'badge-green':add.approvvigionamento==='difficile'?'badge-red':'badge-amber'}>{add.approvvigionamento}</Badge></div>}
+            {add.costo_kg && <div style={{fontSize:22,fontWeight:600,fontFamily:'var(--mono)',color:'var(--n9)',marginBottom:8}}>{add.costo_kg} €/kg</div>}
+            {add.claim_eu_verificato && <div style={{marginBottom:8}}><div style={{fontSize:11,color:'var(--n5)',marginBottom:4}}>Claim EU verificato</div><p style={{fontSize:12,color:'var(--n7)',lineHeight:1.5}}>{add.claim_eu_verificato}</p></div>}
+            {add.note_approvvigionamento && <div><div style={{fontSize:11,color:'var(--n5)',marginBottom:4}}>Note fornitore</div><p style={{fontSize:12,color:'var(--n7)',lineHeight:1.5}}>{add.note_approvvigionamento}</p></div>}
+          </div>
+        )}
+      </div>
+      {add.fonte_primaria && <div style={{marginTop:12,fontSize:11,color:'var(--n5)',fontStyle:'italic'}}>Fonte: {add.fonte_primaria}</div>}
+    </div>
+  );
+}
+
+function Additivi({ data, onAddToBlend }) {
   const { additivi } = data;
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('');
+  const [sel, setSel] = useState(null);
   const categorie = [...new Set(additivi.map(a=>a.categoria))].sort();
-  const filtered = additivi.filter(a => {
-    const match = !q || a.nome.toLowerCase().includes(q.toLowerCase());
-    const catOk = !cat || a.categoria === cat;
-    return match && catOk;
-  });
-
+  const filtered = additivi.filter(a => (!q || a.nome.toLowerCase().includes(q.toLowerCase())) && (!cat || a.categoria === cat));
+  if (sel) return <AdditivisDetail add={sel} onBack={()=>setSel(null)} onAddToBlend={(a)=>{onAddToBlend(a);setSel(null);}} />;
   return (
     <div>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
         <h2 style={{fontSize:16,fontWeight:600}}>Additivi & Enzimi <span style={{color:'var(--n5)',fontWeight:400,fontSize:13}}>({filtered.length}/{additivi.length})</span></h2>
       </div>
       <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap'}}>
-        <div style={{flex:1,minWidth:180}}>
-          <SearchInput value={q} onChange={setQ} placeholder="Cerca additivo..." />
-        </div>
+        <div style={{flex:1,minWidth:180}}><SearchInput value={q} onChange={setQ} placeholder="Cerca additivo..." /></div>
         <select className="input" style={{width:'auto'}} value={cat} onChange={e=>setCat(e.target.value)}>
           <option value="">Tutte le categorie</option>
           {categorie.map(c => <option key={c} value={c}>{c}</option>)}
@@ -621,28 +556,17 @@ function Additivi({ data }) {
       <div className="card" style={{padding:0}}>
         <div className="table-wrap">
           <table>
-            <thead>
-              <tr>
-                <th>ID</th><th>Nome</th><th>Categoria</th><th>Busta</th>
-                <th>Dose min</th><th>Dose max</th><th>Dose ottim.</th>
-                <th>Ausil. tecn.</th><th>non-OGM</th><th>Stato</th>
-              </tr>
-            </thead>
+            <thead><tr><th>ID</th><th>Nome</th><th>Categoria</th><th>Busta</th><th>Dose ottim.</th><th>Ausil. tecn.</th><th>Approvv.</th><th>Stato</th></tr></thead>
             <tbody>
               {filtered.map(a => (
-                <tr key={a.id}>
+                <tr key={a.id} style={{cursor:'pointer'}} onClick={()=>setSel(a)}>
                   <td className="td-mono" style={{color:'var(--n5)'}}>{a.id}</td>
-                  <td>
-                    <div style={{fontWeight:500}}>{a.nome}</div>
-                    {a.funzione_primaria && <div style={{fontSize:11,color:'var(--n5)'}}>{a.funzione_primaria}</div>}
-                  </td>
-                  <td><Badge cls={a.categoria==='enzima'?'badge-blue':a.categoria==='antiossidante'?'badge-amber':'badge-gray'}>{a.categoria}</Badge></td>
+                  <td><div style={{fontWeight:500}}>{a.nome}</div>{a.funzione_primaria&&<div style={{fontSize:11,color:'var(--n5)'}}>{a.funzione_primaria.substring(0,60)}{a.funzione_primaria.length>60?'…':''}</div>}</td>
+                  <td><Badge cls={catColors[a.categoria]||'badge-gray'}>{a.categoria}</Badge></td>
                   <td><Badge>{a.busta||'—'}</Badge></td>
-                  <td className="td-mono">{a.dose_min_pct ? `${a.dose_min_pct}%` : '—'}</td>
-                  <td className="td-mono">{a.dose_max_pct ? `${a.dose_max_pct}%` : '—'}</td>
-                  <td className="td-mono">{a.dose_ottimale_pct ? `${a.dose_ottimale_pct}%` : '—'}</td>
-                  <td>{a.ausiliario_tecnologico === 'si' ? <Badge cls="badge-green">si</Badge> : <Badge>no</Badge>}</td>
-                  <td style={{fontSize:12,color:'var(--n6)',maxWidth:120}}>{a.non_ogm_verificato ? a.non_ogm_verificato.substring(0,30)+'…' : '—'}</td>
+                  <td className="td-mono">{a.dose_ottimale_pct?`${a.dose_ottimale_pct}%`:'—'}</td>
+                  <td>{a.ausiliario_tecnologico==='si'?<Badge cls="badge-green">si</Badge>:<Badge>no</Badge>}</td>
+                  <td>{a.approvvigionamento?<Badge cls={a.approvvigionamento==='facile'?'badge-green':a.approvvigionamento==='difficile'?'badge-red':'badge-amber'}>{a.approvvigionamento}</Badge>:'—'}</td>
                   <td><Badge cls={statoColors[a.stato]}>{a.stato}</Badge></td>
                 </tr>
               ))}
@@ -654,334 +578,338 @@ function Additivi({ data }) {
   );
 }
 
-// ── BLEND BUILDER ─────────────────────────────────────────────
-function BlendBuilder({ data }) {
-  const { ingredienti, additivi, matrici_reol, matrici_chim, matrici_sens, matrici_additivi, ig_per_stato } = data;
-  const [selectedIng, setSelectedIng] = useState([]);
-  const [selectedAdd, setSelectedAdd] = useState([]);
-  const [selectedEnz, setSelectedEnz] = useState([]);
-  const [doses, setDoses] = useState({});
-  const [qIng, setQIng]  = useState('');
-  const [qAdd, setQAdd]  = useState('');
-  const [qEnz, setQEnz]  = useState('');
-  const [tab, setTab]     = useState('composizione');
+function BlendBuilder({ data, blendState, setBlendState }) {
+  const { ingredienti, additivi, matrici_reol, matrici_chim, matrici_sens, matrici_additivi } = data;
+  const { selectedIng, selectedAdd, selectedEnz, lievitante, doses } = blendState;
+  const [tab, setTab] = useState('composizione');
+  const [qIng, setQIng] = useState('');
+  const [qAdd, setQAdd] = useState('');
+  const [qEnz, setQEnz] = useState('');
+  const [costiProcesso, setCostiProcesso] = useState({produzione_mix:0,attivazione_d1:0,cottura:0,confezionamento:0,logistica:0});
+  const [idratazionePct, setIdratazionePct] = useState(80);
+  const [caloCotturaPct, setCaloCotturaPct] = useState(18);
+  const [pesoPezzo, setPesoPezzo] = useState(350);
+  const [prezzoGDO, setPrezzoGDO] = useState(0);
+  const [margineGDO, setMargineGDO] = useState(35);
+  const [costoLievitante, setCostoLievitante] = useState(0);
 
-  const additiviBase  = additivi.filter(a => a.categoria !== 'enzima');
-  const enzimiList    = additivi.filter(a => a.categoria === 'enzima');
+  const setDoses = (fn) => setBlendState(prev => ({...prev, doses: fn(prev.doses)}));
+  const setSelectedIng = (fn) => setBlendState(prev => ({...prev, selectedIng: typeof fn==='function'?fn(prev.selectedIng):fn}));
+  const setSelectedAdd = (fn) => setBlendState(prev => ({...prev, selectedAdd: typeof fn==='function'?fn(prev.selectedAdd):fn}));
+  const setSelectedEnz = (fn) => setBlendState(prev => ({...prev, selectedEnz: typeof fn==='function'?fn(prev.selectedEnz):fn}));
+  const setLievitante  = (v)  => setBlendState(prev => ({...prev, lievitante: v}));
 
-  const addIngrediente = (ing) => {
-    if (selectedIng.find(i => i.id === ing.id)) return;
-    setSelectedIng(prev => [...prev, ing]);
-    setDoses(prev => ({...prev, [`i_${ing.id}`]: 10}));
-  };
+  const additiviBase = additivi.filter(a => !['enzima','lievitante'].includes(a.categoria));
+  const enzimiList   = additivi.filter(a => a.categoria === 'enzima');
+  const lievitantiList = additivi.filter(a => a.categoria === 'lievitante');
 
-  const removeIngrediente = (id) => {
-    setSelectedIng(prev => prev.filter(i => i.id !== id));
-    setDoses(prev => { const d = {...prev}; delete d[`i_${id}`]; return d; });
-  };
+  const addIngrediente = (ing) => { if (selectedIng.find(i=>i.id===ing.id)) return; setSelectedIng(p=>[...p,ing]); setDoses(d=>({...d,[`i_${ing.id}`]:10})); };
+  const removeIngrediente = (id) => { setSelectedIng(p=>p.filter(i=>i.id!==id)); setDoses(d=>{const n={...d};delete n[`i_${id}`];return n;}); };
+  const addAdditivo = (add) => { if (selectedAdd.find(a=>a.id===add.id)) return; setSelectedAdd(p=>[...p,add]); setDoses(d=>({...d,[`a_${add.id}`]:add.dose_ottimale_pct||1})); };
+  const removeAdditivo = (id) => { setSelectedAdd(p=>p.filter(a=>a.id!==id)); setDoses(d=>{const n={...d};delete n[`a_${id}`];return n;}); };
+  const addEnzima = (enz) => { if (selectedEnz.find(e=>e.id===enz.id)) return; setSelectedEnz(p=>[...p,enz]); setDoses(d=>({...d,[`e_${enz.id}`]:enz.dose_ottimale_pct||0.004})); };
+  const removeEnzima = (id) => { setSelectedEnz(p=>p.filter(e=>e.id!==id)); setDoses(d=>{const n={...d};delete n[`e_${id}`];return n;}); };
 
-  const addAdditivo = (add) => {
-    if (selectedAdd.find(a => a.id === add.id)) return;
-    setSelectedAdd(prev => [...prev, add]);
-    setDoses(prev => ({...prev, [`a_${add.id}`]: add.dose_ottimale_pct || 1}));
-  };
-
-  const removeAdditivo = (id) => {
-    setSelectedAdd(prev => prev.filter(a => a.id !== id));
-    setDoses(prev => { const d = {...prev}; delete d[`a_${id}`]; return d; });
-  };
-
-  const addEnzima = (enz) => {
-    if (selectedEnz.find(e => e.id === enz.id)) return;
-    setSelectedEnz(prev => [...prev, enz]);
-    setDoses(prev => ({...prev, [`e_${enz.id}`]: enz.dose_ottimale_pct || 0.005}));
-  };
-
-  const removeEnzima = (id) => {
-    setSelectedEnz(prev => prev.filter(e => e.id !== id));
-    setDoses(prev => { const d = {...prev}; delete d[`e_${id}`]; return d; });
-  };
-
-  // Calcolo IG composito
   const igComposito = useMemo(() => {
     if (!selectedIng.length) return null;
-    const totDose = selectedIng.reduce((s, i) => s + (Number(doses[`i_${i.id}`])||0), 0);
-    if (!totDose) return null;
-    let igCrudo = 0, igCotto = 0, hasCrudo = false, hasCotto = false;
-    selectedIng.forEach(i => {
-      const d = Number(doses[`i_${i.id}`])||0;
-      if (i.ig_crudo) { igCrudo += (i.ig_crudo * d) / totDose; hasCrudo = true; }
-      if (i.ig_cotto) { igCotto += (i.ig_cotto * d) / totDose; hasCotto = true; }
-    });
-    return {
-      crudo: hasCrudo ? Math.round(igCrudo) : null,
-      cotto: hasCotto ? Math.round(igCotto) : null,
-      totDose,
-    };
-  }, [selectedIng, doses]);
+    const tot = selectedIng.reduce((s,i)=>s+(Number(doses[`i_${i.id}`])||0),0);
+    if (!tot) return null;
+    let igCr=0,igCo=0,hasCr=false,hasCo=false;
+    selectedIng.forEach(i=>{ const d=Number(doses[`i_${i.id}`])||0; if(i.ig_crudo){igCr+=(i.ig_crudo*d)/tot;hasCr=true;} if(i.ig_cotto){igCo+=(i.ig_cotto*d)/tot;hasCo=true;} });
+    return {crudo:hasCr?Math.round(igCr):null,cotto:hasCo?Math.round(igCo):null,tot};
+  },[selectedIng,doses]);
 
-  // Claim EU aggregati
-  const claimAggregati = useMemo(() => {
-    const fromIng = selectedIng
-      .filter(i => i.claim_salutistico_eu && i.claim_salutistico_eu.includes('432/2012') && (Number(doses[`i_${i.id}`])||0) >= 5)
-      .map(i => ({ nome: i.nome, claim: i.claim_salutistico_eu }));
-    const fromAdd = selectedAdd
-      .filter(a => a.claim_salutistico_eu && a.claim_salutistico_eu.includes('432/2012'))
-      .map(a => ({ nome: a.nome, claim: a.claim_salutistico_eu }));
-    return [...fromIng, ...fromAdd];
-  }, [selectedIng, selectedAdd, doses]);
+  const claimAggregati = useMemo(()=>{
+    const fromIng = selectedIng.filter(i=>i.claim_salutistico_eu?.includes('432/2012')&&(Number(doses[`i_${i.id}`])||0)>=5).map(i=>({nome:i.nome,claim:i.claim_salutistico_eu,tipo:'ingrediente'}));
+    const fromAdd = selectedAdd.filter(a=>a.claim_salutistico_eu?.includes('432/2012')).map(a=>({nome:a.nome,claim:a.claim_salutistico_eu,tipo:'additivo'}));
+    return [...fromIng,...fromAdd];
+  },[selectedIng,selectedAdd,doses]);
 
-  // Interazioni critiche — include anche enzimi
-  const interazioniCritiche = useMemo(() => {
-    const critiche = [];
-    const ids    = selectedIng.map(i => String(i.id));
-    const addIds = [...selectedAdd, ...selectedEnz].map(a => String(a.id));
-
-    [...matrici_reol, ...matrici_chim, ...matrici_sens].forEach(r => {
-      if (ids.includes(String(r.id_a)) && ids.includes(String(r.id_b)) && r.punteggio <= 2) {
-        const a = ingredienti.find(i => String(i.id) === String(r.id_a));
-        const b = ingredienti.find(i => String(i.id) === String(r.id_b));
-        critiche.push({ tipo: 'ingrediente', a: a?.nome, b: b?.nome, punteggio: r.punteggio, note: r.note });
-      }
-    });
-
-    matrici_additivi.forEach(r => {
-      if (addIds.includes(String(r.additivo_id)) && ids.includes(String(r.ingrediente_id)) && r.punteggio <= 2) {
-        const a = additivi.find(x => String(x.id) === String(r.additivo_id));
-        const b = ingredienti.find(i => String(i.id) === String(r.ingrediente_id));
-        critiche.push({ tipo: r.tipo_interazione||'additivo', a: a?.nome, b: b?.nome, punteggio: r.punteggio, note: r.note });
-      }
-    });
-
-    // Incompatibilità tra enzimi (E03 GOX vs A03 vitamina C)
-    const enzIds = selectedEnz.map(e => e.id);
-    const addSelIds = selectedAdd.map(a => a.id);
-    if (enzIds.includes('E03') && addSelIds.includes('A03')) {
-      critiche.push({ tipo: 'enzima', a: 'GOX (E03)', b: 'Vitamina C (A03)', punteggio: 1,
-        note: 'Competizione ossidoriduzione: GOX e vitamina C ad alte dosi si annullano a vicenda. Evitare combinazione.' });
-    }
-    if (enzIds.includes('E01') && enzIds.includes('E04')) {
-      critiche.push({ tipo: 'enzima', a: 'Amilasi (E01)', b: 'Proteasi (E04)', punteggio: 2,
-        note: 'Idrolisi combinata amido+proteina può collassare struttura impasto. Testare separatamente prima.' });
-    }
-
+  const interazioniCritiche = useMemo(()=>{
+    const critiche=[];
+    const ids=selectedIng.map(i=>String(i.id));
+    const addIds=[...selectedAdd,...selectedEnz].map(a=>String(a.id));
+    [...matrici_reol,...matrici_chim,...matrici_sens].forEach(r=>{ if(ids.includes(String(r.id_a))&&ids.includes(String(r.id_b))&&r.punteggio<=2){ const a=ingredienti.find(i=>String(i.id)===String(r.id_a)); const b=ingredienti.find(i=>String(i.id)===String(r.id_b)); critiche.push({tipo:'ingrediente',a:a?.nome,b:b?.nome,punteggio:r.punteggio,note:r.note}); } });
+    matrici_additivi.forEach(r=>{ if(addIds.includes(String(r.additivo_id))&&ids.includes(String(r.ingrediente_id))&&r.punteggio<=2){ const a=additivi.find(x=>String(x.id)===String(r.additivo_id)); const b=ingredienti.find(i=>String(i.id)===String(r.ingrediente_id)); critiche.push({tipo:r.tipo_interazione||'additivo',a:a?.nome,b:b?.nome,punteggio:r.punteggio,note:r.note}); } });
+    if(selectedEnz.find(e=>e.id==='E03')&&selectedAdd.find(a=>a.id==='A03')) critiche.push({tipo:'enzima',a:'GOX (E03)',b:'Vitamina C (A03)',punteggio:1,note:'Competizione ossidoriduzione: GOX e vitamina C ad alte dosi si annullano.'});
+    if(selectedEnz.find(e=>e.id==='E01')&&selectedEnz.find(e=>e.id==='E04')) critiche.push({tipo:'enzima',a:'Amilasi (E01)',b:'Proteasi (E04)',punteggio:2,note:'Idrolisi combinata può collassare struttura impasto. Testare separatamente.'});
     return critiche;
-  }, [selectedIng, selectedAdd, selectedEnz, matrici_reol, matrici_chim, matrici_sens, matrici_additivi]);
+  },[selectedIng,selectedAdd,selectedEnz,matrici_reol,matrici_chim,matrici_sens,matrici_additivi]);
 
-  const filteredIng = ingredienti.filter(i =>
-    !selectedIng.find(s=>s.id===i.id) &&
-    (i.nome.toLowerCase().includes(qIng.toLowerCase()))
-  ).slice(0, 15);
+  const calcoloCosto = useMemo(()=>{
+    if(!selectedIng.length) return null;
+    if(!selectedIng.some(i=>i.costo_kg>0)) return null;
+    const costoMixSecco = selectedIng.reduce((s,i)=>{ const d=(Number(doses[`i_${i.id}`])||0)/100; const c=Number(i.costo_kg)||0; return s+(c*d); },0) + (lievitante?(Number(doses['liev']||lievitante.dose_ottimale_pct||0)/100)*(Number(costoLievitante)||0):0);
+    const mixPerPezzo = pesoPezzo/((1-(caloCotturaPct/100))*(1+(idratazionePct/100)));
+    const costoMpPerPezzo = costoMixSecco*(mixPerPezzo/1000);
+    const totProcesso = Object.values(costiProcesso).reduce((s,v)=>s+Number(v||0),0);
+    const costoIndustriale = costoMpPerPezzo+totProcesso;
+    const pesoCotto = mixPerPezzo*(1+(idratazionePct/100))*(1-(caloCotturaPct/100));
+    const marginePerc = prezzoGDO>0?((prezzoGDO-costoIndustriale)/prezzoGDO*100):null;
+    const prezzoScaffale = prezzoGDO>0?prezzoGDO/(1-(margineGDO/100)):null;
+    return {costoMixSecco,mixPerPezzo,costoMpPerPezzo,totProcesso,costoIndustriale,pesoCotto,marginePerc,prezzoScaffale};
+  },[selectedIng,doses,lievitante,costoLievitante,caloCotturaPct,idratazionePct,pesoPezzo,costiProcesso,prezzoGDO,margineGDO]);
 
-  const filteredAdd = additiviBase.filter(a =>
-    !selectedAdd.find(s=>s.id===a.id) &&
-    (a.nome.toLowerCase().includes(qAdd.toLowerCase()))
-  ).slice(0, 8);
+  const positioning = useMemo(()=>({
+    novita: selectedIng.filter(i=>i.novita_mercato==='si'),
+    antiInf: selectedIng.filter(i=>i.posizionamento_claim?.includes('anti-infiammatorio')),
+    prebio: selectedIng.filter(i=>i.posizionamento_claim?.includes('prebiotico')||i.inulina_g>0),
+    hasLM: lievitante?.id==='L01'||lievitante?.id==='L04',
+  }),[selectedIng,lievitante]);
 
-  const filteredEnz = enzimiList.filter(e =>
-    !selectedEnz.find(s=>s.id===e.id) &&
-    (e.nome.toLowerCase().includes(qEnz.toLowerCase()))
-  );
+  const filteredIng = ingredienti.filter(i=>!selectedIng.find(s=>s.id===i.id)&&i.nome.toLowerCase().includes(qIng.toLowerCase())).slice(0,15);
+  const filteredAdd = additiviBase.filter(a=>!selectedAdd.find(s=>s.id===a.id)&&a.nome.toLowerCase().includes(qAdd.toLowerCase())).slice(0,8);
+  const filteredEnz = enzimiList.filter(e=>!selectedEnz.find(s=>s.id===e.id)&&e.nome.toLowerCase().includes(qEnz.toLowerCase()));
+
+  const tabList = [
+    {id:'composizione',label:'Composizione'},
+    {id:'calcoli',label:'Calcoli IG & Claim'},
+    {id:'costo',label:'Costo'},
+    {id:'positioning',label:'Positioning'},
+    {id:'interazioni',label:`Interazioni${interazioniCritiche.length>0?` (${interazioniCritiche.length})`:''}`},
+  ];
 
   return (
     <div>
       <h2 style={{fontSize:16,fontWeight:600,marginBottom:16}}>Blend Builder</h2>
-
       <div className="tabs">
-        {['composizione','calcoli','interazioni'].map(t => (
-          <div key={t} className={`tab${tab===t?' active':''}`} onClick={()=>setTab(t)}>
-            {t.charAt(0).toUpperCase()+t.slice(1)}
-            {t==='interazioni' && interazioniCritiche.length > 0 &&
-              <span style={{marginLeft:6,background:'var(--r6)',color:'var(--wh)',borderRadius:10,padding:'0 5px',fontSize:10}}>{interazioniCritiche.length}</span>}
+        {tabList.map(t=>(
+          <div key={t.id} className={`tab${tab===t.id?' active':''}`} onClick={()=>setTab(t.id)}
+            style={t.id==='interazioni'&&interazioniCritiche.length>0?{color:'var(--r6)'}:{}}>
+            {t.label}
           </div>
         ))}
       </div>
 
-      {tab === 'composizione' && (
+      {tab==='composizione' && (
         <div className="grid-2">
           <div>
-            <div className="card" style={{marginBottom:16}}>
-              <div className="card-title">Ingredienti selezionati</div>
-              {selectedIng.length === 0 && <p style={{fontSize:13,color:'var(--n5)'}}>Nessun ingrediente selezionato</p>}
-              {selectedIng.map(i => (
+            <div className="card" style={{marginBottom:12}}>
+              <div className="card-title">Ingredienti ({selectedIng.length})</div>
+              {!selectedIng.length&&<p style={{fontSize:13,color:'var(--n5)'}}>Nessun ingrediente selezionato</p>}
+              {selectedIng.map(i=>(
                 <div key={i.id} className="dose-row">
-                  <div style={{flex:1}}>
-                    <div className="dose-name">{i.nome}</div>
-                    <div className="dose-fam">{i.famiglia} · busta {i.busta_consigliata||'?'}</div>
-                  </div>
-                  <input type="number" className="input dose-input" min="0" max="100" step="0.5"
-                    value={doses[`i_${i.id}`]||0}
-                    onChange={e=>setDoses(d=>({...d,[`i_${i.id}`]:e.target.value}))} />
+                  <div style={{flex:1}}><div className="dose-name">{i.nome}</div><div className="dose-fam">{i.famiglia} · busta {i.busta_consigliata||'?'}</div></div>
+                  <input type="number" className="input dose-input" min="0" max="100" step="0.5" value={doses[`i_${i.id}`]||0} onChange={e=>setDoses(d=>({...d,[`i_${i.id}`]:e.target.value}))} />
                   <span className="dose-unit">%</span>
                   <button onClick={()=>removeIngrediente(i.id)} style={{color:'var(--n4)',fontSize:16,padding:'0 4px'}}>×</button>
                 </div>
               ))}
-              <div style={{marginTop:12}}>
-                <div style={{fontSize:12,color:'var(--n6)',marginBottom:6}}>Totale ingredienti: <strong style={{fontFamily:'var(--mono)'}}>
-                  {selectedIng.reduce((s,i)=>s+(Number(doses[`i_${i.id}`])||0),0).toFixed(1)}%
-                </strong></div>
-              </div>
+              {selectedIng.length>0&&<div style={{marginTop:8,fontSize:12,color:'var(--n6)'}}>Totale: <strong style={{fontFamily:'var(--mono)'}}>{selectedIng.reduce((s,i)=>s+(Number(doses[`i_${i.id}`])||0),0).toFixed(1)}%</strong></div>}
             </div>
 
-            <div className="card">
-              <div className="card-title">Additivi selezionati</div>
-              {selectedAdd.length === 0 && <p style={{fontSize:13,color:'var(--n5)'}}>Nessun additivo selezionato</p>}
-              {selectedAdd.map(a => (
-                <div key={a.id} className="dose-row">
+            <div className="card" style={{marginBottom:12}}>
+              <div className="card-title">Lievitante (uno solo)</div>
+              <label style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',cursor:'pointer',fontSize:13}}>
+                <input type="radio" name="liev" checked={!lievitante} onChange={()=>setLievitante(null)} />
+                <span>Nessuno (cracker/biscotti — lievitazione chimica)</span>
+              </label>
+              {lievitantiList.map(l=>(
+                <label key={l.id} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',cursor:'pointer',borderTop:'1px solid var(--n2)'}}>
+                  <input type="radio" name="liev" checked={lievitante?.id===l.id} onChange={()=>setLievitante(l)} />
                   <div style={{flex:1}}>
-                    <div className="dose-name">{a.nome}</div>
-                    <div className="dose-fam">{a.categoria} · busta {a.busta||'?'}</div>
+                    <div style={{fontSize:13,fontWeight:500}}>{l.nome}</div>
+                    <div style={{fontSize:11,color:'var(--n5)'}}>Dose ottimale: {l.dose_ottimale_pct}% · {l.busta||'no busta'}</div>
                   </div>
-                  <input type="number" className="input dose-input" min="0" max="10" step="0.001"
-                    value={doses[`a_${a.id}`]||0}
-                    onChange={e=>setDoses(d=>({...d,[`a_${a.id}`]:e.target.value}))} />
+                  {lievitante?.id===l.id&&(
+                    <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                      <input type="number" className="input" style={{width:60,padding:'3px 6px',fontSize:12}} value={doses['liev']||l.dose_ottimale_pct} onChange={e=>setDoses(d=>({...d,liev:e.target.value}))} />
+                      <span style={{fontSize:11,color:'var(--n5)'}}>%</span>
+                    </div>
+                  )}
+                </label>
+              ))}
+              {lievitante?.id==='L01'&&<Alert type="green">LM cereal-free: claim "lievitazione naturale" comunicabile. Degrada fitati 40-60%.</Alert>}
+              {(lievitante?.id==='L02'||lievitante?.id==='L03')&&<Alert type="amber">LDB: solo "lievito" in etichetta. Mantenere aceto di mele C01.</Alert>}
+            </div>
+
+            <div className="card" style={{marginBottom:12}}>
+              <div className="card-title">Additivi ({selectedAdd.length})</div>
+              {!selectedAdd.length&&<p style={{fontSize:13,color:'var(--n5)'}}>Nessun additivo selezionato</p>}
+              {selectedAdd.map(a=>(
+                <div key={a.id} className="dose-row">
+                  <div style={{flex:1}}><div className="dose-name">{a.nome}</div><div className="dose-fam">{a.categoria} · busta {a.busta||'?'}</div></div>
+                  <input type="number" className="input dose-input" min="0" max="20" step="0.01" value={doses[`a_${a.id}`]||0} onChange={e=>setDoses(d=>({...d,[`a_${a.id}`]:e.target.value}))} />
                   <span className="dose-unit">%</span>
                   <button onClick={()=>removeAdditivo(a.id)} style={{color:'var(--n4)',fontSize:16,padding:'0 4px'}}>×</button>
                 </div>
               ))}
-
-              <div style={{marginTop:14,paddingTop:12,borderTop:'1px solid var(--n2)'}}>
-                <div style={{fontSize:12,fontWeight:600,color:'var(--b8)',marginBottom:8,display:'flex',alignItems:'center',gap:6}}>
-                  <span>⚗</span> Enzimi selezionati
-                  <Badge cls="badge-blue" style={{fontSize:10}}>non-OGM required</Badge>
-                </div>
-                {selectedEnz.length === 0 && <p style={{fontSize:12,color:'var(--n5)'}}>Nessun enzima selezionato</p>}
-                {selectedEnz.map(e => (
+              {selectedEnz.length>0&&<div style={{marginTop:10,paddingTop:8,borderTop:'1px solid var(--n2)'}}>
+                <div style={{fontSize:11,fontWeight:600,color:'var(--b8)',marginBottom:6}}>⚗ Enzimi non-OGM</div>
+                {selectedEnz.map(e=>(
                   <div key={e.id} className="dose-row">
-                    <div style={{flex:1}}>
-                      <div className="dose-name" style={{fontSize:12}}>{e.nome}</div>
-                      <div className="dose-fam">{e.id} · busta {e.busta||'?'} · {e.ausiliario_tecnologico==='si'?'ausiliario tecn.':'dichiarare'}</div>
-                    </div>
-                    <input type="number" className="input dose-input" min="0" max="0.1" step="0.001"
-                      value={doses[`e_${e.id}`]||0}
-                      onChange={ev=>setDoses(d=>({...d,[`e_${e.id}`]:ev.target.value}))} />
+                    <div style={{flex:1}}><div style={{fontSize:12,fontWeight:500}}>{e.nome}</div><div className="dose-fam">{e.id} · ausiliario tecn.</div></div>
+                    <input type="number" className="input dose-input" min="0" max="0.1" step="0.001" value={doses[`e_${e.id}`]||0} onChange={ev=>setDoses(d=>({...d,[`e_${e.id}`]:ev.target.value}))} />
                     <span className="dose-unit">%</span>
                     <button onClick={()=>removeEnzima(e.id)} style={{color:'var(--n4)',fontSize:16,padding:'0 4px'}}>×</button>
                   </div>
                 ))}
-              </div>
+              </div>}
             </div>
           </div>
 
           <div>
-            <div className="card" style={{marginBottom:16}}>
+            <div className="card" style={{marginBottom:12}}>
               <div className="card-title">Aggiungi ingrediente</div>
               <SearchInput value={qIng} onChange={setQIng} placeholder="Cerca ingrediente..." />
-              <div style={{maxHeight:240,overflowY:'auto'}}>
-                {filteredIng.map(i => (
-                  <div key={i.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 4px',borderBottom:'1px solid var(--n2)',cursor:'pointer'}}
-                    onClick={()=>addIngrediente(i)}>
-                    <div>
-                      <div style={{fontSize:13,fontWeight:500}}>{i.nome}</div>
-                      <div style={{fontSize:11,color:'var(--n5)'}}>{i.famiglia}</div>
-                    </div>
+              <div style={{maxHeight:220,overflowY:'auto'}}>
+                {filteredIng.map(i=>(
+                  <div key={i.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 4px',borderBottom:'1px solid var(--n2)',cursor:'pointer'}} onClick={()=>addIngrediente(i)}>
+                    <div><div style={{fontSize:13,fontWeight:500}}>{i.nome}</div><div style={{fontSize:11,color:'var(--n5)'}}>{i.famiglia}</div></div>
                     <span style={{color:'var(--g6)',fontSize:18}}>+</span>
                   </div>
                 ))}
               </div>
             </div>
-
             <div className="card">
               <div className="card-title">Aggiungi additivo</div>
               <SearchInput value={qAdd} onChange={setQAdd} placeholder="Cerca additivo..." />
-              <div style={{maxHeight:160,overflowY:'auto'}}>
-                {filteredAdd.map(a => (
-                  <div key={a.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 4px',borderBottom:'1px solid var(--n2)',cursor:'pointer'}}
-                    onClick={()=>addAdditivo(a)}>
-                    <div>
-                      <div style={{fontSize:13,fontWeight:500}}>{a.nome}</div>
-                      <div style={{fontSize:11,color:'var(--n5)'}}>{a.categoria} · dose ottim. {a.dose_ottimale_pct||'?'}%</div>
-                    </div>
+              <div style={{maxHeight:140,overflowY:'auto'}}>
+                {filteredAdd.map(a=>(
+                  <div key={a.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 4px',borderBottom:'1px solid var(--n2)',cursor:'pointer'}} onClick={()=>addAdditivo(a)}>
+                    <div><div style={{fontSize:13,fontWeight:500}}>{a.nome}</div><div style={{fontSize:11,color:'var(--n5)'}}>{a.categoria}</div></div>
                     <span style={{color:'var(--g6)',fontSize:18}}>+</span>
                   </div>
                 ))}
               </div>
-
-              <div style={{marginTop:12,paddingTop:10,borderTop:'1px solid var(--n2)'}}>
+              {filteredEnz.length>0&&<div style={{marginTop:10,paddingTop:8,borderTop:'1px solid var(--n2)'}}>
                 <div style={{fontSize:12,fontWeight:600,color:'var(--b8)',marginBottom:6}}>⚗ Enzimi non-OGM</div>
                 <SearchInput value={qEnz} onChange={setQEnz} placeholder="Cerca enzima..." />
-                <div style={{maxHeight:140,overflowY:'auto'}}>
-                  {filteredEnz.map(e => (
-                    <div key={e.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 4px',borderBottom:'1px solid var(--n2)',cursor:'pointer'}}
-                      onClick={()=>addEnzima(e)}>
-                      <div>
-                        <div style={{fontSize:12,fontWeight:500}}>{e.nome}</div>
-                        <div style={{fontSize:10,color:'var(--n5)'}}>{e.id} · {e.dose_min_pct}-{e.dose_max_pct}% · {e.non_ogm_verificato?.startsWith('da')?<span style={{color:'var(--a6)'}}>⚠ verificare non-OGM</span>:'✓ non-OGM'}</div>
-                      </div>
+                <div style={{maxHeight:120,overflowY:'auto'}}>
+                  {filteredEnz.map(e=>(
+                    <div key={e.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 4px',borderBottom:'1px solid var(--n2)',cursor:'pointer'}} onClick={()=>addEnzima(e)}>
+                      <div><div style={{fontSize:12,fontWeight:500}}>{e.nome}</div><div style={{fontSize:10,color:'var(--n5)'}}>{e.id}</div></div>
                       <span style={{color:'var(--b6)',fontSize:18}}>+</span>
                     </div>
                   ))}
                 </div>
-              </div>
+              </div>}
             </div>
           </div>
         </div>
       )}
 
-      {tab === 'calcoli' && (
+      {tab==='calcoli' && (
         <div className="grid-2">
           <div className="card">
             <div className="card-title">IG composito blend</div>
-            {!igComposito ? <p style={{fontSize:13,color:'var(--n5)'}}>Aggiungi ingredienti per calcolare l'IG</p> : (
+            {!igComposito?<p style={{fontSize:13,color:'var(--n5)'}}>Aggiungi ingredienti per calcolare l'IG</p>:(
               <div>
-                <div style={{display:'flex',gap:20,marginBottom:16}}>
-                  {igComposito.crudo !== null && (
-                    <div className="stat">
-                      <div className="stat-label">IG crudo</div>
-                      <div style={{fontSize:28,fontWeight:600,fontFamily:'var(--mono)',color:igComposito.crudo>55?'var(--r8)':igComposito.crudo>35?'var(--a6)':'var(--g8)'}}>
-                        {igComposito.crudo}
-                      </div>
-                    </div>
-                  )}
-                  {igComposito.cotto !== null && (
-                    <div className="stat">
-                      <div className="stat-label">IG da cotto ⚠</div>
-                      <div style={{fontSize:28,fontWeight:600,fontFamily:'var(--mono)',color:igComposito.cotto>55?'var(--r8)':igComposito.cotto>35?'var(--a6)':'var(--g8)'}}>
-                        {igComposito.cotto}
-                      </div>
-                    </div>
-                  )}
+                <div style={{display:'flex',gap:20,marginBottom:12}}>
+                  {igComposito.crudo!==null&&<div className="stat"><div className="stat-label">IG crudo</div><div style={{fontSize:28,fontWeight:600,fontFamily:'var(--mono)',color:igComposito.crudo>55?'var(--r8)':igComposito.crudo>35?'var(--a6)':'var(--g8)'}}>{igComposito.crudo}</div></div>}
+                  {igComposito.cotto!==null&&<div className="stat"><div className="stat-label">IG da cotto ⚠</div><div style={{fontSize:28,fontWeight:600,fontFamily:'var(--mono)',color:igComposito.cotto>55?'var(--r8)':igComposito.cotto>35?'var(--a6)':'var(--g8)'}}>{igComposito.cotto}</div></div>}
                 </div>
-                <div className="ig-bar" style={{height:10,marginBottom:6}}>
-                  <div className="ig-fill" style={{
-                    width:`${Math.min(100,igComposito.cotto||igComposito.crudo||0)}%`,
-                    background: (igComposito.cotto||0) > 55 ? 'var(--r6)' : (igComposito.cotto||0) > 35 ? 'var(--a4)' : 'var(--g6)'
-                  }}/>
-                </div>
-                <p style={{fontSize:11,color:'var(--n5)'}}>
-                  ⚠ Il valore IG da cotto è quello rilevante per i claim — gli amidi gelatinizzano aumentando significativamente l'IG rispetto al crudo.
-                </p>
+                <p style={{fontSize:11,color:'var(--n5)'}}>⚠ L'IG da cotto è quello rilevante per i claim.</p>
               </div>
             )}
           </div>
-
           <div className="card">
             <div className="card-title">Claim UE 432/2012 comunicabili</div>
-            {claimAggregati.length === 0 ?
-              <p style={{fontSize:13,color:'var(--n5)'}}>Nessun claim EU per gli ingredienti selezionati a dose ≥5%</p> :
-              claimAggregati.map((c,i) => (
+            {!claimAggregati.length?<p style={{fontSize:13,color:'var(--n5)'}}>Nessun claim EU per gli ingredienti selezionati</p>:
+              claimAggregati.map((c,i)=>(
                 <div key={i} style={{marginBottom:10,paddingBottom:10,borderBottom:'1px solid var(--n2)'}}>
-                  <div style={{fontSize:12,fontWeight:600,color:'var(--n7)',marginBottom:3}}>{c.nome}</div>
+                  <div style={{fontSize:12,fontWeight:600,color:'var(--n7)',marginBottom:3}}>{c.nome} <Badge cls={c.tipo==='additivo'?'badge-amber':'badge-blue'}>{c.tipo}</Badge></div>
                   <div style={{fontSize:12,color:'var(--b8)',lineHeight:1.5}}>{c.claim}</div>
                 </div>
               ))
             }
           </div>
+          <div className="card"><div className="card-title">Calcolo TDT — Temperatura acqua</div><TDTCalculator /></div>
+        </div>
+      )}
 
-          <div className="card">
-            <div className="card-title">Calcolo TDT — Temperatura acqua</div>
-            <TDTCalculator />
+      {tab==='costo' && (
+        <div>
+          {!selectedIng.some(i=>i.costo_kg>0)&&(<Alert type="amber">Nessun ingrediente ha il costo_kg compilato. Inserisci i costi nel Google Sheet e rilancia il sync.</Alert>)}
+          <div className="grid-2">
+            <div className="card">
+              <div className="card-title">Parametri di calcolo</div>
+              {[['Idratazione impasto %',idratazionePct,setIdratazionePct,60,100,1],['Calo cottura %',caloCotturaPct,setCaloCotturaPct,5,35,0.5],['Peso pezzo target g',pesoPezzo,setPesoPezzo,100,1000,10],['Margine GDO % (default 35)',margineGDO,setMargineGDO,20,60,1]].map(([l,v,set,min,max,step])=>(
+                <div key={l} className="input-group"><label className="input-label">{l}</label><input type="number" className="input" min={min} max={max} step={step} value={v} onChange={e=>set(Number(e.target.value))} /></div>
+              ))}
+              {lievitante&&(<div className="input-group"><label className="input-label">Costo {lievitante.nome} (€/kg)</label><input type="number" className="input" min="0" step="0.5" value={costoLievitante} onChange={e=>setCostoLievitante(e.target.value)} /></div>)}
+              <div style={{marginTop:12,paddingTop:12,borderTop:'1px solid var(--n2)'}}>
+                <div style={{fontSize:12,fontWeight:600,color:'var(--n6)',marginBottom:8}}>Costi processo €/pezzo</div>
+                {[['Produzione mix secco','produzione_mix'],['Attivazione terzista D-1','attivazione_d1'],['Cottura terzista','cottura'],['Confezionamento MAP','confezionamento'],['Logistica','logistica']].map(([l,k])=>(
+                  <div key={k} className="input-group" style={{marginBottom:6}}><label className="input-label" style={{fontSize:11}}>{l}</label><input type="number" className="input" min="0" step="0.01" value={costiProcesso[k]||''} placeholder="0.00" onChange={e=>setCostiProcesso(p=>({...p,[k]:e.target.value}))} /></div>
+                ))}
+              </div>
+              <div className="input-group" style={{marginTop:12}}><label className="input-label">Prezzo vendita a GDO €/pezzo</label><input type="number" className="input" min="0" step="0.1" value={prezzoGDO||''} placeholder="es. 3.50" onChange={e=>setPrezzoGDO(Number(e.target.value))} /></div>
+            </div>
+            <div className="card">
+              <div className="card-title">Calcolo cascata</div>
+              {calcoloCosto?(
+                <div>
+                  {[['Costo mix secco',`${calcoloCosto.costoMixSecco.toFixed(2)} €/kg`,'var(--n7)',false],['Mix secco per pezzo',`${calcoloCosto.mixPerPezzo.toFixed(1)} g`,'var(--n7)',false],['Costo materie prime/pezzo',`${calcoloCosto.costoMpPerPezzo.toFixed(3)} €`,'var(--n7)',false],['+ Costi processo/pezzo',`${calcoloCosto.totProcesso.toFixed(2)} €`,'var(--n7)',false],['= Costo industriale/pezzo',`${calcoloCosto.costoIndustriale.toFixed(3)} €`,'var(--g8)',true]].map(([l,v,c,bold])=>(
+                    <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--n2)',fontSize:13}}>
+                      <span style={{color:'var(--n6)'}}>{l}</span><span style={{fontFamily:'var(--mono)',fontWeight:bold?700:500,color:c}}>{v}</span>
+                    </div>
+                  ))}
+                  {calcoloCosto.pesoCotto<pesoPezzo&&(<Alert type="red">⚠ Peso cotto {calcoloCosto.pesoCotto.toFixed(0)}g inferiore al peso dichiarato {pesoPezzo}g — problema legale etichettatura.</Alert>)}
+                  {prezzoGDO>0&&calcoloCosto.marginePerc!==null&&(
+                    <div style={{marginTop:12,background:'var(--g0)',borderRadius:8,padding:12}}>
+                      <div style={{display:'flex',justifyContent:'space-between',marginBottom:6,fontSize:13}}><span>Prezzo a GDO</span><span style={{fontFamily:'var(--mono)',fontWeight:600}}>{prezzoGDO.toFixed(2)} €</span></div>
+                      <div style={{display:'flex',justifyContent:'space-between',marginBottom:6,fontSize:13}}><span>Margine produttore</span><span style={{fontFamily:'var(--mono)',fontWeight:700,color:calcoloCosto.marginePerc<20?'var(--r8)':calcoloCosto.marginePerc<35?'var(--a6)':'var(--g8)'}}>{calcoloCosto.marginePerc.toFixed(1)}%</span></div>
+                      <div style={{display:'flex',justifyContent:'space-between',fontSize:13}}><span>Prezzo scaffale stimato ({margineGDO}% GDO)</span><span style={{fontFamily:'var(--mono)',fontWeight:600}}>{calcoloCosto.prezzoScaffale.toFixed(2)} €</span></div>
+                    </div>
+                  )}
+                </div>
+              ):(<p style={{fontSize:13,color:'var(--n5)'}}>Inserisci i costi degli ingredienti nel Google Sheet per abilitare il calcolo.</p>)}
+            </div>
           </div>
         </div>
       )}
 
-      {tab === 'interazioni' && (
+      {tab==='positioning' && (
         <div>
-          {interazioniCritiche.length === 0 ?
-            <Alert type="green">Nessuna interazione critica (punteggio ≤2) rilevata tra gli ingredienti e additivi selezionati.</Alert> :
+          <div className="grid-2">
+            <div className="card">
+              <div className="card-title">Narrativa blend</div>
+              {!selectedIng.length?<p style={{fontSize:13,color:'var(--n5)'}}>Aggiungi ingredienti per generare il positioning</p>:(
+                <div>
+                  {positioning.hasLM&&<Alert type="green"><strong>Lievitazione naturale</strong> — comunicabile come "fermentato naturalmente senza cereali".</Alert>}
+                  {positioning.novita.length>0&&(<div style={{marginBottom:12}}><div style={{fontSize:12,fontWeight:600,color:'var(--n7)',marginBottom:6}}>🆕 Novità assolute per la GDO italiana</div>{positioning.novita.map(i=>(<div key={i.id} style={{padding:'6px 10px',background:'var(--g0)',borderRadius:6,marginBottom:4,fontSize:13}}><strong>{i.nome}</strong>{i.storia_ingrediente&&<p style={{fontSize:12,color:'var(--n6)',marginTop:2,lineHeight:1.5}}>{i.storia_ingrediente.substring(0,150)}…</p>}</div>))}</div>)}
+                  {positioning.antiInf.length>0&&(<div style={{marginBottom:12}}><div style={{fontSize:12,fontWeight:600,color:'var(--n7)',marginBottom:6}}>🔥 Profilo anti-infiammatorio</div><div style={{fontSize:13,color:'var(--n6)'}}>Ingredienti: {positioning.antiInf.map(i=>i.nome).join(', ')}</div></div>)}
+                  {positioning.prebio.length>0&&(<div style={{marginBottom:12}}><div style={{fontSize:12,fontWeight:600,color:'var(--n7)',marginBottom:6}}>🦠 Profilo prebiotico</div><div style={{fontSize:13,color:'var(--n6)'}}>Ingredienti: {positioning.prebio.map(i=>i.nome).join(', ')}</div></div>)}
+                </div>
+              )}
+            </div>
+            <div className="card">
+              <div className="card-title">Claim EU comunicabili</div>
+              {!claimAggregati.length?(<p style={{fontSize:13,color:'var(--n5)'}}>Nessun claim EU per gli ingredienti selezionati a dose sufficiente.</p>):(
+                <div>{claimAggregati.map((c,i)=>(<div key={i} style={{marginBottom:10,paddingBottom:10,borderBottom:'1px solid var(--n2)'}}><div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}><strong style={{fontSize:13}}>{c.nome}</strong><Badge cls="badge-blue">EU 432/2012</Badge></div><p style={{fontSize:12,color:'var(--b8)',lineHeight:1.5}}>{c.claim}</p></div>))}</div>
+              )}
+              <div style={{marginTop:12,paddingTop:12,borderTop:'1px solid var(--n2)'}}>
+                <div style={{fontSize:12,fontWeight:600,color:'var(--n7)',marginBottom:6}}>Claim lievitante</div>
+                {!lievitante?<p style={{fontSize:12,color:'var(--n5)'}}>Nessun lievitante selezionato</p>:
+                  lievitante.id==='L01'||lievitante.id==='L04'?
+                  <div style={{background:'var(--g0)',borderRadius:6,padding:'8px 10px',fontSize:12,color:'var(--g8)'}}>✓ "Lievitazione naturale con lievito madre" — comunicabile</div>:
+                  <div style={{background:'var(--n1)',borderRadius:6,padding:'8px 10px',fontSize:12,color:'var(--n6)'}}>Solo "lievito" in etichetta — nessun claim naturale</div>
+                }
+              </div>
+            </div>
+            <div className="card">
+              <div className="card-title">Differenziazione vs mercato GF</div>
+              <div style={{fontSize:13,color:'var(--n7)',lineHeight:1.8}}>
+                <div>• <strong>Cereal-free</strong>: mercato GDO quasi inesistente</div>
+                <div>• <strong>Ingredienti attivati</strong>: protocollo scientifico differenziante</div>
+                <div>• <strong>Clean label</strong>: zero E2xx, conservanti naturali</div>
+                {positioning.hasLM&&<div>• <strong>Lievito madre cereal-free</strong>: unicità assoluta</div>}
+                {positioning.novita.length>0&&<div>• <strong>{positioning.novita.length} ingredienti novità GDO</strong>: {positioning.novita.map(i=>i.nome).join(', ')}</div>}
+                {positioning.antiInf.length>0&&<div>• <strong>Profilo anti-infiammatorio documentato</strong>: {positioning.antiInf.length} ingredienti funzionali</div>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab==='interazioni' && (
+        <div>
+          {!interazioniCritiche.length?
+            <Alert type="green">Nessuna interazione critica (punteggio ≤2) rilevata.</Alert>:
             <div>
-              <Alert type="amber">Rilevate {interazioniCritiche.length} interazioni critiche. Verificare prima di procedere con le prove.</Alert>
-              {interazioniCritiche.map((r,i) => (
+              <Alert type="amber">Rilevate {interazioniCritiche.length} interazioni critiche. Verificare prima di procedere.</Alert>
+              {interazioniCritiche.map((r,i)=>(
                 <div key={i} className="card" style={{marginBottom:8}}>
                   <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
                     <Badge cls="badge-red">Punteggio {r.punteggio}</Badge>
@@ -1005,39 +933,19 @@ function TDTCalculator() {
   const [imp, setImp]   = useState('spirale');
   const frictionMap = { spirale:10, forcella:12, bracci:15 };
   const F = frictionMap[imp];
-  const tTarget = 23;
-  const tAcqua = tAmb && tFar ? (3*tTarget) - (Number(tAmb)+Number(tFar)+F) : null;
+  const tAcqua = tAmb && tFar ? (3*23) - (Number(tAmb)+Number(tFar)+F) : null;
   const alert = tAcqua !== null ? tAcqua < 4 ? 'red' : tAcqua > 20 ? 'amber' : 'green' : null;
-
   return (
     <div>
       <div className="doe-grid">
-        <div className="input-group">
-          <label className="input-label">T ambiente (°C)</label>
-          <input className="input" type="number" value={tAmb} onChange={e=>setTAmb(e.target.value)} placeholder="es. 22" />
-        </div>
-        <div className="input-group">
-          <label className="input-label">T farine (°C)</label>
-          <input className="input" type="number" value={tFar} onChange={e=>setTFar(e.target.value)} placeholder="es. 21" />
-        </div>
+        <div className="input-group"><label className="input-label">T ambiente (°C)</label><input className="input" type="number" value={tAmb} onChange={e=>setTAmb(e.target.value)} placeholder="es. 22" /></div>
+        <div className="input-group"><label className="input-label">T farine (°C)</label><input className="input" type="number" value={tFar} onChange={e=>setTFar(e.target.value)} placeholder="es. 21" /></div>
       </div>
-      <div className="input-group">
-        <label className="input-label">Tipo impastatrice</label>
-        <select className="input" value={imp} onChange={e=>setImp(e.target.value)}>
-          <option value="spirale">Spirale (F=10°C)</option>
-          <option value="forcella">Forcella (F=12°C)</option>
-          <option value="bracci">Bracci tuffanti (F=15°C)</option>
-        </select>
-      </div>
+      <div className="input-group"><label className="input-label">Tipo impastatrice</label><select className="input" value={imp} onChange={e=>setImp(e.target.value)}><option value="spirale">Spirale (F=10°C)</option><option value="forcella">Forcella (F=12°C)</option><option value="bracci">Bracci tuffanti (F=15°C)</option></select></div>
       {tAcqua !== null && (
         <div style={{marginTop:8}}>
-          <div style={{fontSize:12,color:'var(--n5)',marginBottom:4,fontFamily:'var(--mono)'}}>
-            T = (3×{tTarget}) - ({tAmb} + {tFar} + {F}) =
-          </div>
-          <div style={{fontSize:28,fontWeight:600,fontFamily:'var(--mono)',
-            color:alert==='red'?'var(--r8)':alert==='amber'?'var(--a6)':'var(--g8)'}}>
-            {tAcqua.toFixed(1)}°C
-          </div>
+          <div style={{fontSize:12,color:'var(--n5)',marginBottom:4,fontFamily:'var(--mono)'}}>T = (3×23) - ({tAmb} + {tFar} + {F}) =</div>
+          <div style={{fontSize:28,fontWeight:600,fontFamily:'var(--mono)',color:alert==='red'?'var(--r8)':alert==='amber'?'var(--a6)':'var(--g8)'}}>{tAcqua.toFixed(1)}°C</div>
           {alert==='red' && <Alert type="red">Usare acqua ghiacciata o scaglie di ghiaccio.</Alert>}
           {alert==='amber' && <Alert type="amber">Verificare condizioni — T elevata.</Alert>}
           {alert==='green' && <Alert type="green">Temperatura ottimale. T target impasto: 22-24°C.</Alert>}
@@ -1047,15 +955,10 @@ function TDTCalculator() {
   );
 }
 
-// ── MATRICI ───────────────────────────────────────────────────
 function HeatmapMatrice({ current, ingMap, addMap, isAdditivi }) {
   const [selCella, setSelCella] = useState(null);
-
-  // Raccoglie assi unici
   const asseA = [...new Set(current.map(r => isAdditivi ? String(r.additivo_id) : String(r.id_a)))].sort();
   const asseB = [...new Set(current.map(r => isAdditivi ? String(r.ingrediente_id) : String(r.id_b)))].sort();
-
-  // Indice coppie: "a_b" -> record
   const idx = {};
   current.forEach(r => {
     const a = isAdditivi ? String(r.additivo_id) : String(r.id_a);
@@ -1063,12 +966,9 @@ function HeatmapMatrice({ current, ingMap, addMap, isAdditivi }) {
     idx[`${a}_${b}`] = r;
     if (!isAdditivi) idx[`${b}_${a}`] = r;
   });
-
   const nomeA = (id) => isAdditivi ? (addMap[id]||id) : (ingMap[id]||id);
   const nomeB = (id) => ingMap[id]||id;
-
   if (!asseA.length) return <p style={{fontSize:13,color:'var(--n5)',padding:16}}>Nessuna coppia disponibile.</p>;
-
   return (
     <div>
       {selCella && (
@@ -1087,38 +987,22 @@ function HeatmapMatrice({ current, ingMap, addMap, isAdditivi }) {
         <table style={{borderCollapse:'separate',borderSpacing:3,fontSize:11}}>
           <thead>
             <tr>
-              <th style={{background:'none',border:'none',width:120,maxWidth:120}}></th>
-              {asseB.map(b => (
-                <th key={b} style={{background:'none',border:'none',padding:'0 2px',writingMode:'vertical-rl',textOrientation:'mixed',transform:'rotate(180deg)',height:80,fontWeight:500,color:'var(--n6)',fontSize:10,verticalAlign:'bottom',whiteSpace:'nowrap'}}>
-                  {nomeB(b).substring(0,20)}
-                </th>
-              ))}
+              <th style={{background:'none',border:'none',width:120}}></th>
+              {asseB.map(b => (<th key={b} style={{background:'none',border:'none',padding:'0 2px',writingMode:'vertical-rl',textOrientation:'mixed',transform:'rotate(180deg)',height:80,fontWeight:500,color:'var(--n6)',fontSize:10,verticalAlign:'bottom',whiteSpace:'nowrap'}}>{nomeB(b).substring(0,20)}</th>))}
             </tr>
           </thead>
           <tbody>
             {asseA.map(a => (
               <tr key={a}>
-                <td style={{fontSize:11,fontWeight:500,color:'var(--n7)',padding:'2px 8px 2px 0',whiteSpace:'nowrap',maxWidth:120,overflow:'hidden',textOverflow:'ellipsis'}}>
-                  {nomeA(a).substring(0,18)}
-                </td>
+                <td style={{fontSize:11,fontWeight:500,color:'var(--n7)',padding:'2px 8px 2px 0',whiteSpace:'nowrap',maxWidth:120,overflow:'hidden',textOverflow:'ellipsis'}}>{nomeA(a).substring(0,18)}</td>
                 {asseB.map(b => {
                   const r = idx[`${a}_${b}`];
                   const p = r?.punteggio || 0;
                   const isSelected = selCella?.a===a && selCella?.b===b;
                   return (
                     <td key={b} style={{padding:2}}>
-                      {r ? (
-                        <div
-                          className={`heatmap-cell hm-${p}`}
-                          style={{outline: isSelected ? '2px solid var(--g6)' : 'none'}}
-                          title={`${nomeA(a)} × ${nomeB(b)}: ${p}`}
-                          onClick={() => setSelCella(isSelected ? null : {a, b, punteggio:p, note:r.note, fonte:r.fonte, tipo:r.tipo_interazione})}
-                        >
-                          {p}
-                        </div>
-                      ) : (
-                        <div style={{width:32,height:32,borderRadius:4,background:'var(--n1)'}}/>
-                      )}
+                      {r ? (<div className={`heatmap-cell hm-${p}`} style={{outline:isSelected?'2px solid var(--g6)':'none'}} title={`${nomeA(a)} × ${nomeB(b)}: ${p}`} onClick={() => setSelCella(isSelected?null:{a,b,punteggio:p,note:r.note,fonte:r.fonte,tipo:r.tipo_interazione})}>{p}</div>)
+                      : (<div style={{width:32,height:32,borderRadius:4,background:'var(--n1)'}}/>)}
                     </td>
                   );
                 })}
@@ -1134,9 +1018,6 @@ function HeatmapMatrice({ current, ingMap, addMap, isAdditivi }) {
             {p===1?'Critico':p===2?'Attenzione':p===3?'Neutro':p===4?'Buono':'Ottimo'}
           </div>
         ))}
-        <div style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'var(--n6)'}}>
-          <div style={{width:18,height:18,borderRadius:3,background:'var(--n1)'}}/>Nessuna coppia
-        </div>
       </div>
     </div>
   );
@@ -1148,14 +1029,10 @@ function Matrici({ data }) {
   const [vista, setVista] = useState('heatmap');
   const [sel, setSel]   = useState(null);
   const [filtroIng, setFiltroIng] = useState('');
-
   const ingMap = Object.fromEntries(ingredienti.map(i=>[String(i.id),i.nome]));
   const addMap = Object.fromEntries(additivi.map(a=>[String(a.id),a.nome]));
-
   const matData = { reol:matrici_reol, chim:matrici_chim, sens:matrici_sens, additivi:matrici_additivi };
   const isAdditivi = tab === 'additivi';
-
-  // Filtra per ingrediente se selezionato
   const current = useMemo(() => {
     const base = matData[tab] || [];
     if (!filtroIng) return base;
@@ -1164,8 +1041,7 @@ function Matrici({ data }) {
       const b = isAdditivi ? String(r.ingrediente_id) : String(r.id_b);
       const nA = (isAdditivi ? addMap[a] : ingMap[a]) || '';
       const nB = ingMap[b] || '';
-      return nA.toLowerCase().includes(filtroIng.toLowerCase()) ||
-             nB.toLowerCase().includes(filtroIng.toLowerCase());
+      return nA.toLowerCase().includes(filtroIng.toLowerCase()) || nB.toLowerCase().includes(filtroIng.toLowerCase());
     });
   }, [tab, filtroIng, matrici_reol, matrici_chim, matrici_sens, matrici_additivi]);
 
@@ -1178,7 +1054,6 @@ function Matrici({ data }) {
           <button className={`btn btn-sm ${vista==='lista'?'btn-primary':'btn-secondary'}`} onClick={()=>setVista('lista')}>≡ Lista</button>
         </div>
       </div>
-
       <div className="tabs">
         {[['reol','Reologica'],['chim','Chimica'],['sens','Sensoriale'],['additivi','Additivi×Ingredienti']].map(([k,l]) => (
           <div key={k} className={`tab${tab===k?' active':''}`} onClick={()=>{setTab(k);setSel(null);setFiltroIng('');}}>
@@ -1186,46 +1061,28 @@ function Matrici({ data }) {
           </div>
         ))}
       </div>
-
       <div style={{marginBottom:12}}>
-        <input className="input" style={{maxWidth:280}} placeholder="Filtra per ingrediente/additivo..."
-          value={filtroIng} onChange={e=>setFiltroIng(e.target.value)}/>
+        <input className="input" style={{maxWidth:280}} placeholder="Filtra per ingrediente/additivo..." value={filtroIng} onChange={e=>setFiltroIng(e.target.value)}/>
         {filtroIng && <span style={{fontSize:12,color:'var(--n5)',marginLeft:8}}>{current.length} coppie trovate</span>}
       </div>
-
       {vista === 'heatmap' ? (
-        <div className="card">
-          <HeatmapMatrice current={current} ingMap={ingMap} addMap={addMap} isAdditivi={isAdditivi} />
-        </div>
+        <div className="card"><HeatmapMatrice current={current} ingMap={ingMap} addMap={addMap} isAdditivi={isAdditivi} /></div>
       ) : (
         <div className="card" style={{padding:0}}>
           <div className="table-wrap">
             <table>
-              <thead>
-                <tr>
-                  <th>{isAdditivi?'Additivo':'Ingrediente A'}</th>
-                  <th>Ingrediente B</th>
-                  {isAdditivi && <th>Tipo</th>}
-                  <th>Punteggio</th>
-                  <th>Note</th>
-                  <th>Fonte</th>
-                  <th>Stato</th>
-                </tr>
-              </thead>
+              <thead><tr><th>{isAdditivi?'Additivo':'Ingrediente A'}</th><th>Ingrediente B</th>{isAdditivi && <th>Tipo</th>}<th>Punteggio</th><th>Note</th><th>Fonte</th><th>Stato</th></tr></thead>
               <tbody>
                 {current.map((r,i) => {
                   const nomeA = isAdditivi ? (addMap[r.additivo_id]||r.additivo_id) : (ingMap[r.id_a]||r.id_a);
                   const nomeB = ingMap[isAdditivi?r.ingrediente_id:r.id_b] || (isAdditivi?r.ingrediente_id:r.id_b);
-                  const p = r.punteggio;
                   return (
                     <tr key={i} style={{cursor:'pointer'}} onClick={()=>setSel(sel===i?null:i)}>
                       <td style={{fontWeight:500}}>{nomeA}</td>
                       <td style={{fontWeight:500}}>{nomeB}</td>
-                      {isAdditivi && <td><Badge cls={r.tipo_interazione==='sinergia'?'badge-green':r.tipo_interazione==='attenzione'||r.tipo_interazione==='competizione'?'badge-amber':'badge-red'}>{r.tipo_interazione}</Badge></td>}
-                      <td><div className={`heatmap-cell hm-${p||0}`} style={{width:28,height:28}}>{p||'—'}</div></td>
-                      <td style={{fontSize:12,color:'var(--n6)',maxWidth:200}}>
-                        {sel===i ? r.note : (r.note||'').substring(0,60)+(r.note?.length>60?'…':'')}
-                      </td>
+                      {isAdditivi && <td><Badge cls={r.tipo_interazione==='sinergia'?'badge-green':'badge-amber'}>{r.tipo_interazione}</Badge></td>}
+                      <td><div className={`heatmap-cell hm-${r.punteggio||0}`} style={{width:28,height:28}}>{r.punteggio||'—'}</div></td>
+                      <td style={{fontSize:12,color:'var(--n6)',maxWidth:200}}>{sel===i ? r.note : (r.note||'').substring(0,60)+(r.note?.length>60?'…':'')}</td>
                       <td style={{fontSize:11,color:'var(--n5)',fontStyle:'italic',maxWidth:120}}>{(r.fonte||'').substring(0,40)}</td>
                       <td><Badge cls={statoColors[r.stato]}>{r.stato}</Badge></td>
                     </tr>
@@ -1240,15 +1097,13 @@ function Matrici({ data }) {
   );
 }
 
-// ── MARKETING ─────────────────────────────────────────────────
-function Marketing({ data }) {
+function Marketing({ data, onAddToBlend }) {
   const { ingredienti } = data;
   const mktIng = ingredienti.filter(i => i.potenziale_marketing).sort((a,b) => {
     const ord = {alto:0,medio:1,basso:2};
     return (ord[a.potenziale_marketing]||3)-(ord[b.potenziale_marketing]||3);
   });
   const [sel, setSel] = useState(null);
-
   return (
     <div>
       <h2 style={{fontSize:16,fontWeight:600,marginBottom:4}}>Marketing layer</h2>
@@ -1257,51 +1112,21 @@ function Marketing({ data }) {
         {ingredienti.filter(i=>i.novita_mercato==='si').length} novità assolute per la GDO italiana ·{' '}
         {ingredienti.filter(i=>i.claim_salutistico_eu?.includes('432/2012')).length} claim EU approvati
       </p>
-
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:12}}>
         {mktIng.map(i => (
-          <div key={i.id} className={`mkt-card ${i.potenziale_marketing}`}
-            onClick={()=>setSel(sel?.id===i.id?null:i)}>
+          <div key={i.id} className={`mkt-card ${i.potenziale_marketing}`} onClick={()=>setSel(sel?.id===i.id?null:i)}>
             <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:8}}>
-              <div>
-                <div style={{fontWeight:600,fontSize:14}}>{i.nome}</div>
-                <div style={{fontSize:11,color:'var(--n5)',fontStyle:'italic'}}>{i.nome_latino}</div>
-              </div>
-              <Badge cls={i.potenziale_marketing==='alto'?'badge-green':i.potenziale_marketing==='medio'?'badge-amber':'badge-gray'}>
-                {i.potenziale_marketing}
-              </Badge>
+              <div><div style={{fontWeight:600,fontSize:14}}>{i.nome}</div><div style={{fontSize:11,color:'var(--n5)',fontStyle:'italic'}}>{i.nome_latino}</div></div>
+              <Badge cls={i.potenziale_marketing==='alto'?'badge-green':i.potenziale_marketing==='medio'?'badge-amber':'badge-gray'}>{i.potenziale_marketing}</Badge>
             </div>
-
-            {i.novita_mercato==='si' && (
-              <div style={{marginBottom:6}}>
-                <span className="claim-tag">🆕 Novità GDO</span>
-              </div>
-            )}
-
-            {i.posizionamento_claim && (
-              <div style={{marginBottom:8}}>
-                {i.posizionamento_claim.split(',').map(p => (
-                  <span key={p} className="claim-tag">{p.trim()}</span>
-                ))}
-              </div>
-            )}
-
+            {i.novita_mercato==='si' && (<div style={{marginBottom:6}}><span className="claim-tag">🆕 Novità GDO</span></div>)}
+            {i.posizionamento_claim && (<div style={{marginBottom:8}}>{i.posizionamento_claim.split(',').map(p => (<span key={p} className="claim-tag">{p.trim()}</span>))}</div>)}
             {sel?.id === i.id && (
               <div style={{marginTop:10,paddingTop:10,borderTop:'1px solid var(--n2)'}}>
-                {i.storia_ingrediente && (
-                  <p style={{fontSize:12,color:'var(--n7)',lineHeight:1.6,marginBottom:8}}>{i.storia_ingrediente}</p>
-                )}
-                {i.claim_salutistico_eu && (
-                  <div style={{background:'var(--b0)',padding:'8px 10px',borderRadius:6,marginBottom:6}}>
-                    <div style={{fontSize:10,fontWeight:600,color:'var(--b8)',marginBottom:3}}>CLAIM UE 432/2012</div>
-                    <p style={{fontSize:12,color:'var(--b8)',lineHeight:1.5}}>{i.claim_salutistico_eu}</p>
-                  </div>
-                )}
-                {i.certificazioni_possibili && (
-                  <div style={{fontSize:12,color:'var(--n6)'}}>
-                    <strong>Certificazioni:</strong> {i.certificazioni_possibili}
-                  </div>
-                )}
+                <button className="btn btn-primary btn-sm" style={{marginBottom:8}} onClick={e=>{e.stopPropagation();onAddToBlend(i);}}>⊕ Aggiungi al Blend Builder</button>
+                {i.storia_ingrediente && (<p style={{fontSize:12,color:'var(--n7)',lineHeight:1.6,marginBottom:8}}>{i.storia_ingrediente}</p>)}
+                {i.claim_salutistico_eu && (<div style={{background:'var(--b0)',padding:'8px 10px',borderRadius:6,marginBottom:6}}><div style={{fontSize:10,fontWeight:600,color:'var(--b8)',marginBottom:3}}>CLAIM UE 432/2012</div><p style={{fontSize:12,color:'var(--b8)',lineHeight:1.5}}>{i.claim_salutistico_eu}</p></div>)}
+                {i.certificazioni_possibili && (<div style={{fontSize:12,color:'var(--n6)'}}><strong>Certificazioni:</strong> {i.certificazioni_possibili}</div>)}
               </div>
             )}
           </div>
@@ -1311,59 +1136,27 @@ function Marketing({ data }) {
   );
 }
 
-// ── PROVE DOE ─────────────────────────────────────────────────
-function ProveDoE({ data, onSave }) {
+function ProveDoE({ data }) {
   const { prove_doe } = data;
   const [tab, setTab] = useState('lista');
   const [form, setForm] = useState({
-    id: `ESPL-${String(Date.now()).slice(-4)}`,
-    stato: 'esplorativa',
-    blend_id: 'B01',
-    numero_prova: '',
-    data: new Date().toISOString().split('T')[0],
-    operatore: '',
-    luogo: '',
-    tipo_impastatrice: 'spirale',
-    friction_factor: 10,
-    t_ambiente_c: '',
-    t_farine_c: '',
-    t_acqua_calcolata_c: '',
-    t_acqua_usata_c: '',
-    t_impasto_uscita_c: '',
-    ph_impasto: '',
-    idratazione_pct: '',
-    ceci_pct: '',
-    quinoa_pct: 10,
-    psyllium_pct: 4,
-    lm_pct: 15,
-    fitasi_usata: false,
-    gox_usata: false,
-    t_apretto_c: '',
-    durata_apretto_min: '',
-    volume_aumento_apretto_pct: '',
-    t_interna_fine_c: '',
-    aw_prodotto: '',
-    ph_mollica: '',
-    sapore_1_9: '',
-    texture_1_9: '',
-    gommosita_1_9: '',
-    soddisfazione_1_9: '',
-    note_sensoriali: '',
-    note_generali: '',
-    esito_complessivo: '',
+    id:`ESPL-${String(Date.now()).slice(-4)}`,stato:'esplorativa',blend_id:'B01',numero_prova:'',
+    data:new Date().toISOString().split('T')[0],operatore:'',luogo:'',tipo_impastatrice:'spirale',
+    friction_factor:10,t_ambiente_c:'',t_farine_c:'',t_acqua_calcolata_c:'',t_acqua_usata_c:'',
+    t_impasto_uscita_c:'',ph_impasto:'',idratazione_pct:'',ceci_pct:'',quinoa_pct:10,psyllium_pct:4,lm_pct:15,
+    fitasi_usata:false,gox_usata:false,t_apretto_c:'',durata_apretto_min:'',volume_aumento_apretto_pct:'',
+    t_interna_fine_c:'',aw_prodotto:'',ph_mollica:'',sapore_1_9:'',texture_1_9:'',gommosita_1_9:'',
+    soddisfazione_1_9:'',note_sensoriali:'',note_generali:'',esito_complessivo:'',
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved]   = useState(false);
   const [errMsg, setErrMsg] = useState('');
-
   const set = (k,v) => setForm(f=>({...f,[k]:v}));
 
-  // Calcolo TDT automatico
   useEffect(() => {
     if (form.t_ambiente_c && form.t_farine_c) {
       const F = form.tipo_impastatrice==='spirale'?10:form.tipo_impastatrice==='forcella'?12:15;
-      const tAcqua = (3*23) - (Number(form.t_ambiente_c)+Number(form.t_farine_c)+F);
-      set('t_acqua_calcolata_c', tAcqua.toFixed(1));
+      set('t_acqua_calcolata_c', ((3*23)-(Number(form.t_ambiente_c)+Number(form.t_farine_c)+F)).toFixed(1));
       set('friction_factor', F);
     }
   }, [form.t_ambiente_c, form.t_farine_c, form.tipo_impastatrice]);
@@ -1371,61 +1164,33 @@ function ProveDoE({ data, onSave }) {
   const handleSave = async () => {
     setSaving(true); setErrMsg('');
     try {
-      const res = await fetch(`${API}?action=save_doe`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(form),
-      });
+      const res = await fetch(`${API}?action=save_doe`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)});
       const json = await res.json();
-      if (json.status === 'ok') {
-        setSaved(true);
-        if (onSave) onSave();
-        setTimeout(()=>setSaved(false), 3000);
-      } else {
-        setErrMsg(json.message||'Errore salvataggio');
-      }
-    } catch(e) {
-      setErrMsg(e.message);
-    }
+      if (json.status==='ok'){setSaved(true);setTimeout(()=>setSaved(false),3000);}
+      else setErrMsg(json.message||'Errore salvataggio');
+    } catch(e) { setErrMsg(e.message); }
     setSaving(false);
   };
 
+  const tImpasto = Number(form.t_impasto_uscita_c);
+  const awNum    = Number(form.aw_prodotto);
   const tAcquaNum = Number(form.t_acqua_calcolata_c);
-  const tImpasto  = Number(form.t_impasto_uscita_c);
-  const awNum     = Number(form.aw_prodotto);
 
   return (
     <div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-        <h2 style={{fontSize:16,fontWeight:600}}>Prove DoE</h2>
-      </div>
-
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}><h2 style={{fontSize:16,fontWeight:600}}>Prove DoE</h2></div>
       <div className="tabs">
-        <div className={`tab${tab==='lista'?' active':''}`} onClick={()=>setTab('lista')}>
-          Lista prove ({prove_doe.length})
-        </div>
-        <div className={`tab${tab==='nuova'?' active':''}`} onClick={()=>setTab('nuova')}>
-          Nuova prova
-        </div>
+        <div className={`tab${tab==='lista'?' active':''}`} onClick={()=>setTab('lista')}>Lista prove ({prove_doe.length})</div>
+        <div className={`tab${tab==='nuova'?' active':''}`} onClick={()=>setTab('nuova')}>Nuova prova</div>
       </div>
-
-      {tab === 'lista' && (
+      {tab==='lista' && (
         <div className="card" style={{padding:0}}>
           <div className="table-wrap">
             <table>
-              <thead>
-                <tr>
-                  <th>ID</th><th>Stato</th><th>Data</th><th>Operatore</th>
-                  <th>Ceci%</th><th>Idr%</th><th>T app.</th>
-                  <th>T int.</th><th>aw</th><th>Sapore</th><th>Esito</th>
-                </tr>
-              </thead>
+              <thead><tr><th>ID</th><th>Stato</th><th>Data</th><th>Operatore</th><th>Ceci%</th><th>Idr%</th><th>T app.</th><th>T int.</th><th>aw</th><th>Sapore</th><th>Esito</th></tr></thead>
               <tbody>
-                {prove_doe.length === 0 ? (
-                  <tr><td colSpan={11} style={{textAlign:'center',color:'var(--n5)',padding:20}}>
-                    Nessuna prova registrata
-                  </td></tr>
-                ) : prove_doe.map((p,i) => (
+                {prove_doe.length===0?(<tr><td colSpan={11} style={{textAlign:'center',color:'var(--n5)',padding:20}}>Nessuna prova registrata</td></tr>):
+                prove_doe.map((p,i)=>(
                   <tr key={i}>
                     <td className="td-mono" style={{fontWeight:500}}>{p.id}</td>
                     <td><Badge cls={p.stato==='doe_formale'?'badge-blue':p.stato==='annullata'?'badge-red':'badge-gray'}>{p.stato}</Badge></td>
@@ -1434,12 +1199,8 @@ function ProveDoE({ data, onSave }) {
                     <td className="td-mono">{p.ceci_pct||'—'}</td>
                     <td className="td-mono">{p.idratazione_pct||'—'}</td>
                     <td className="td-mono">{p.t_apretto_c||'—'}</td>
-                    <td className="td-mono" style={{color:p.t_interna_fine_c<94?'var(--r6)':p.t_interna_fine_c>97?'var(--a6)':'var(--g7)'}}>
-                      {p.t_interna_fine_c||'—'}
-                    </td>
-                    <td className="td-mono" style={{color:p.aw_prodotto>0.97?'var(--r6)':p.aw_prodotto&&p.aw_prodotto<0.94?'var(--a6)':'var(--g7)'}}>
-                      {p.aw_prodotto||'—'}
-                    </td>
+                    <td className="td-mono" style={{color:p.t_interna_fine_c<94?'var(--r6)':p.t_interna_fine_c>97?'var(--a6)':'var(--g7)'}}>{p.t_interna_fine_c||'—'}</td>
+                    <td className="td-mono" style={{color:p.aw_prodotto>0.97?'var(--r6)':p.aw_prodotto&&p.aw_prodotto<0.94?'var(--a6)':'var(--g7)'}}>{p.aw_prodotto||'—'}</td>
                     <td className="td-mono">{p.sapore_1_9||'—'}</td>
                     <td><Badge cls={p.esito_complessivo==='POSITIVO'?'badge-green':p.esito_complessivo==='NEGATIVO'?'badge-red':'badge-gray'}>{p.esito_complessivo||'—'}</Badge></td>
                   </tr>
@@ -1449,190 +1210,74 @@ function ProveDoE({ data, onSave }) {
           </div>
         </div>
       )}
-
-      {tab === 'nuova' && (
+      {tab==='nuova' && (
         <div>
           {saved && <Alert type="green">✓ Prova salvata correttamente nel database.</Alert>}
           {errMsg && <Alert type="red">Errore: {errMsg}</Alert>}
-
           <div className="card doe-section">
             <div className="doe-section-title">Identificazione</div>
             <div className="doe-grid">
-              <div className="input-group">
-                <label className="input-label">ID prova</label>
-                <input className="input" value={form.id} onChange={e=>set('id',e.target.value)} placeholder="es. ESPL-001 o DOE-001"/>
-              </div>
-              <div className="input-group">
-                <label className="input-label">Stato</label>
-                <select className="input" value={form.stato} onChange={e=>set('stato',e.target.value)}>
-                  <option value="esplorativa">Esplorativa</option>
-                  <option value="doe_formale">DoE formale</option>
-                  <option value="annullata">Annullata</option>
-                </select>
-              </div>
-              <div className="input-group">
-                <label className="input-label">Data</label>
-                <input className="input" type="date" value={form.data} onChange={e=>set('data',e.target.value)}/>
-              </div>
-              <div className="input-group">
-                <label className="input-label">Operatore</label>
-                <input className="input" value={form.operatore} onChange={e=>set('operatore',e.target.value)} placeholder="Nome operatore"/>
-              </div>
+              <div className="input-group"><label className="input-label">ID prova</label><input className="input" value={form.id} onChange={e=>set('id',e.target.value)} /></div>
+              <div className="input-group"><label className="input-label">Stato</label><select className="input" value={form.stato} onChange={e=>set('stato',e.target.value)}><option value="esplorativa">Esplorativa</option><option value="doe_formale">DoE formale</option><option value="annullata">Annullata</option></select></div>
+              <div className="input-group"><label className="input-label">Data</label><input className="input" type="date" value={form.data} onChange={e=>set('data',e.target.value)}/></div>
+              <div className="input-group"><label className="input-label">Operatore</label><input className="input" value={form.operatore} onChange={e=>set('operatore',e.target.value)} /></div>
             </div>
           </div>
-
           <div className="card doe-section">
             <div className="doe-section-title">Variabili DoE</div>
             <div className="doe-grid">
-              <div className="input-group">
-                <label className="input-label">Ceci % (variabile)</label>
-                <select className="input" value={form.ceci_pct} onChange={e=>set('ceci_pct',e.target.value)}>
-                  <option value="">— scegli —</option>
-                  <option value="25">25% (livello basso)</option>
-                  <option value="35">35% (livello alto)</option>
-                </select>
-              </div>
-              <div className="input-group">
-                <label className="input-label">Idratazione % (variabile)</label>
-                <select className="input" value={form.idratazione_pct} onChange={e=>set('idratazione_pct',e.target.value)}>
-                  <option value="">— scegli —</option>
-                  <option value="79">79% (livello basso)</option>
-                  <option value="82">82% (livello alto)</option>
-                </select>
-              </div>
-              <div className="input-group">
-                <label className="input-label">T lievitazione °C (variabile)</label>
-                <select className="input" value={form.t_apretto_c} onChange={e=>set('t_apretto_c',e.target.value)}>
-                  <option value="">— scegli —</option>
-                  <option value="26">26°C (livello basso)</option>
-                  <option value="28">28°C (livello alto)</option>
-                </select>
-              </div>
+              <div className="input-group"><label className="input-label">Ceci %</label><select className="input" value={form.ceci_pct} onChange={e=>set('ceci_pct',e.target.value)}><option value="">— scegli —</option><option value="25">25% (basso)</option><option value="35">35% (alto)</option></select></div>
+              <div className="input-group"><label className="input-label">Idratazione %</label><select className="input" value={form.idratazione_pct} onChange={e=>set('idratazione_pct',e.target.value)}><option value="">— scegli —</option><option value="79">79% (basso)</option><option value="82">82% (alto)</option></select></div>
+              <div className="input-group"><label className="input-label">T lievitazione °C</label><select className="input" value={form.t_apretto_c} onChange={e=>set('t_apretto_c',e.target.value)}><option value="">— scegli —</option><option value="26">26°C (basso)</option><option value="28">28°C (alto)</option></select></div>
             </div>
             <div style={{display:'flex',gap:16,marginTop:4}}>
-              <label style={{display:'flex',alignItems:'center',gap:6,fontSize:13,cursor:'pointer'}}>
-                <input type="checkbox" checked={form.fitasi_usata} onChange={e=>set('fitasi_usata',e.target.checked)}/> Fitasi E06 usata
-              </label>
-              <label style={{display:'flex',alignItems:'center',gap:6,fontSize:13,cursor:'pointer'}}>
-                <input type="checkbox" checked={form.gox_usata} onChange={e=>set('gox_usata',e.target.checked)}/> GOX E03 usata
-              </label>
+              <label style={{display:'flex',alignItems:'center',gap:6,fontSize:13,cursor:'pointer'}}><input type="checkbox" checked={form.fitasi_usata} onChange={e=>set('fitasi_usata',e.target.checked)}/> Fitasi E06 usata</label>
+              <label style={{display:'flex',alignItems:'center',gap:6,fontSize:13,cursor:'pointer'}}><input type="checkbox" checked={form.gox_usata} onChange={e=>set('gox_usata',e.target.checked)}/> GOX E03 usata</label>
             </div>
           </div>
-
           <div className="card doe-section">
             <div className="doe-section-title">Impasto — calcolo TDT</div>
             <div className="doe-grid">
-              <div className="input-group">
-                <label className="input-label">T ambiente (°C)</label>
-                <input className="input" type="number" value={form.t_ambiente_c} onChange={e=>set('t_ambiente_c',e.target.value)}/>
-              </div>
-              <div className="input-group">
-                <label className="input-label">T farine (°C)</label>
-                <input className="input" type="number" value={form.t_farine_c} onChange={e=>set('t_farine_c',e.target.value)}/>
-              </div>
-              <div className="input-group">
-                <label className="input-label">Impastatrice</label>
-                <select className="input" value={form.tipo_impastatrice} onChange={e=>set('tipo_impastatrice',e.target.value)}>
-                  <option value="spirale">Spirale (F=10°C)</option>
-                  <option value="forcella">Forcella (F=12°C)</option>
-                  <option value="bracci">Bracci tuffanti (F=15°C)</option>
-                </select>
-              </div>
+              <div className="input-group"><label className="input-label">T ambiente (°C)</label><input className="input" type="number" value={form.t_ambiente_c} onChange={e=>set('t_ambiente_c',e.target.value)}/></div>
+              <div className="input-group"><label className="input-label">T farine (°C)</label><input className="input" type="number" value={form.t_farine_c} onChange={e=>set('t_farine_c',e.target.value)}/></div>
+              <div className="input-group"><label className="input-label">Impastatrice</label><select className="input" value={form.tipo_impastatrice} onChange={e=>set('tipo_impastatrice',e.target.value)}><option value="spirale">Spirale (F=10°C)</option><option value="forcella">Forcella (F=12°C)</option><option value="bracci">Bracci tuffanti (F=15°C)</option></select></div>
             </div>
             {form.t_acqua_calcolata_c && (
               <div className="doe-ccp" style={{marginTop:8,background:tAcquaNum<4?'var(--r0)':'var(--g0)',borderColor:tAcquaNum<4?'var(--r1)':'var(--g1)'}}>
                 <div className="doe-ccp-label" style={{color:tAcquaNum<4?'var(--r8)':'var(--g8)'}}>T acqua calcolata</div>
                 <div className="doe-ccp-value" style={{color:tAcquaNum<4?'var(--r8)':'var(--g8)'}}>{form.t_acqua_calcolata_c}°C</div>
-                {tAcquaNum < 4 && <div style={{fontSize:11,color:'var(--r6)'}}>⚠ Usare acqua ghiacciata</div>}
               </div>
             )}
             <div className="doe-grid" style={{marginTop:8}}>
-              <div className="input-group">
-                <label className="input-label">T acqua usata (°C)</label>
-                <input className="input" type="number" value={form.t_acqua_usata_c} onChange={e=>set('t_acqua_usata_c',e.target.value)}/>
-              </div>
-              <div className="input-group">
-                <label className="input-label">T impasto uscita (°C) — CCP</label>
-                <input className="input" type="number" value={form.t_impasto_uscita_c} onChange={e=>set('t_impasto_uscita_c',e.target.value)}
-                  style={{borderColor:tImpasto>26?'var(--r6)':tImpasto&&tImpasto<=26?'var(--g6)':'var(--n3)'}}/>
-                {tImpasto > 26 && <div className="input-hint" style={{color:'var(--r8)'}}>⚠ CCP: oltre 26°C — LM si attiva incontrollato</div>}
-                {tImpasto > 0 && tImpasto <= 26 && <div className="input-hint" style={{color:'var(--g7)'}}>✓ Nella norma</div>}
-              </div>
-              <div className="input-group">
-                <label className="input-label">pH impasto — CCP</label>
-                <input className="input" type="number" step="0.1" value={form.ph_impasto} onChange={e=>set('ph_impasto',e.target.value)}/>
-                <div className="input-hint">Target: 5.2-5.8</div>
-              </div>
+              <div className="input-group"><label className="input-label">T acqua usata (°C)</label><input className="input" type="number" value={form.t_acqua_usata_c} onChange={e=>set('t_acqua_usata_c',e.target.value)}/></div>
+              <div className="input-group"><label className="input-label">T impasto uscita (°C) — CCP</label><input className="input" type="number" value={form.t_impasto_uscita_c} onChange={e=>set('t_impasto_uscita_c',e.target.value)} style={{borderColor:tImpasto>26?'var(--r6)':tImpasto&&tImpasto<=26?'var(--g6)':'var(--n3)'}}/>{tImpasto>26&&<div className="input-hint" style={{color:'var(--r8)'}}>⚠ CCP: oltre 26°C</div>}</div>
+              <div className="input-group"><label className="input-label">pH impasto — CCP</label><input className="input" type="number" step="0.1" value={form.ph_impasto} onChange={e=>set('ph_impasto',e.target.value)}/><div className="input-hint">Target: 5.2-5.8</div></div>
             </div>
           </div>
-
           <div className="card doe-section">
             <div className="doe-section-title">Prodotto finito — CCP</div>
             <div className="doe-grid">
-              <div className="input-group">
-                <label className="input-label">T interna cottura (°C) — CCP</label>
-                <input className="input" type="number" step="0.1" value={form.t_interna_fine_c} onChange={e=>set('t_interna_fine_c',e.target.value)}
-                  style={{borderColor:Number(form.t_interna_fine_c)<94&&form.t_interna_fine_c?'var(--r6)':Number(form.t_interna_fine_c)>=94?'var(--g6)':'var(--n3)'}}/>
-                <div className="input-hint">Target: 94-97°C</div>
-                {Number(form.t_interna_fine_c) < 94 && form.t_interna_fine_c &&
-                  <div className="input-hint" style={{color:'var(--r8)'}}>⚠ NON confezionare — rimettere in forno</div>}
-              </div>
-              <div className="input-group">
-                <label className="input-label">aw prodotto finito — CCP</label>
-                <input className="input" type="number" step="0.001" value={form.aw_prodotto} onChange={e=>set('aw_prodotto',e.target.value)}
-                  style={{borderColor:awNum>0.97&&awNum?'var(--r6)':awNum>=0.94&&awNum<=0.96?'var(--g6)':'var(--n3)'}}/>
-                <div className="input-hint">Target: 0.94-0.96</div>
-                {awNum > 0.97 && <div className="input-hint" style={{color:'var(--r8)'}}>⚠ NON confezionare — prolungare raffreddamento</div>}
-              </div>
-              <div className="input-group">
-                <label className="input-label">pH mollica</label>
-                <input className="input" type="number" step="0.1" value={form.ph_mollica} onChange={e=>set('ph_mollica',e.target.value)}/>
-                <div className="input-hint">Target: 5.0-5.5</div>
-              </div>
+              <div className="input-group"><label className="input-label">T interna cottura (°C) — CCP</label><input className="input" type="number" step="0.1" value={form.t_interna_fine_c} onChange={e=>set('t_interna_fine_c',e.target.value)} style={{borderColor:Number(form.t_interna_fine_c)<94&&form.t_interna_fine_c?'var(--r6)':Number(form.t_interna_fine_c)>=94?'var(--g6)':'var(--n3)'}}/><div className="input-hint">Target: 94-97°C</div>{Number(form.t_interna_fine_c)<94&&form.t_interna_fine_c&&<div className="input-hint" style={{color:'var(--r8)'}}>⚠ NON confezionare</div>}</div>
+              <div className="input-group"><label className="input-label">aw prodotto finito — CCP</label><input className="input" type="number" step="0.001" value={form.aw_prodotto} onChange={e=>set('aw_prodotto',e.target.value)} style={{borderColor:awNum>0.97&&awNum?'var(--r6)':awNum>=0.94&&awNum<=0.96?'var(--g6)':'var(--n3)'}}/><div className="input-hint">Target: 0.94-0.96</div>{awNum>0.97&&<div className="input-hint" style={{color:'var(--r8)'}}>⚠ NON confezionare</div>}</div>
+              <div className="input-group"><label className="input-label">pH mollica</label><input className="input" type="number" step="0.1" value={form.ph_mollica} onChange={e=>set('ph_mollica',e.target.value)}/><div className="input-hint">Target: 5.0-5.5</div></div>
             </div>
           </div>
-
           <div className="card doe-section">
             <div className="doe-section-title">Valutazione sensoriale (1-9)</div>
             <div className="doe-grid">
-              {[['sapore_1_9','Sapore'],['texture_1_9','Texture'],
-                ['gommosita_1_9','Gommosità (9=per nulla)'],['soddisfazione_1_9','Soddisfazione']].map(([k,l]) => (
-                <div className="input-group" key={k}>
-                  <label className="input-label">{l}</label>
-                  <select className="input" value={form[k]} onChange={e=>set(k,e.target.value)}>
-                    <option value="">—</option>
-                    {[1,2,3,4,5,6,7,8,9].map(n=><option key={n} value={n}>{n}</option>)}
-                  </select>
-                </div>
+              {[['sapore_1_9','Sapore'],['texture_1_9','Texture'],['gommosita_1_9','Gommosità (9=per nulla)'],['soddisfazione_1_9','Soddisfazione']].map(([k,l])=>(
+                <div className="input-group" key={k}><label className="input-label">{l}</label><select className="input" value={form[k]} onChange={e=>set(k,e.target.value)}><option value="">—</option>{[1,2,3,4,5,6,7,8,9].map(n=><option key={n} value={n}>{n}</option>)}</select></div>
               ))}
             </div>
-            <div className="input-group">
-              <label className="input-label">Note sensoriali</label>
-              <textarea className="input" rows={3} value={form.note_sensoriali} onChange={e=>set('note_sensoriali',e.target.value)} style={{resize:'vertical'}}/>
-            </div>
+            <div className="input-group"><label className="input-label">Note sensoriali</label><textarea className="input" rows={3} value={form.note_sensoriali} onChange={e=>set('note_sensoriali',e.target.value)} style={{resize:'vertical'}}/></div>
           </div>
-
           <div className="card">
             <div className="doe-section-title">Esito e note</div>
             <div className="doe-grid" style={{marginBottom:12}}>
-              <div className="input-group">
-                <label className="input-label">Esito complessivo</label>
-                <select className="input" value={form.esito_complessivo} onChange={e=>set('esito_complessivo',e.target.value)}>
-                  <option value="">— scegli —</option>
-                  <option value="POSITIVO">POSITIVO</option>
-                  <option value="PARZIALE">PARZIALE</option>
-                  <option value="NEGATIVO">NEGATIVO</option>
-                </select>
-              </div>
+              <div className="input-group"><label className="input-label">Esito complessivo</label><select className="input" value={form.esito_complessivo} onChange={e=>set('esito_complessivo',e.target.value)}><option value="">— scegli —</option><option value="POSITIVO">POSITIVO</option><option value="PARZIALE">PARZIALE</option><option value="NEGATIVO">NEGATIVO</option></select></div>
             </div>
-            <div className="input-group">
-              <label className="input-label">Note generali</label>
-              <textarea className="input" rows={3} value={form.note_generali} onChange={e=>set('note_generali',e.target.value)} style={{resize:'vertical'}}/>
-            </div>
-            <button className="btn btn-primary" onClick={handleSave} disabled={saving}
-              style={{marginTop:8}}>
-              {saving ? 'Salvataggio...' : '✓ Salva prova nel database'}
-            </button>
+            <div className="input-group"><label className="input-label">Note generali</label><textarea className="input" rows={3} value={form.note_generali} onChange={e=>set('note_generali',e.target.value)} style={{resize:'vertical'}}/></div>
+            <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{marginTop:8}}>{saving?'Salvataggio...':'✓ Salva prova nel database'}</button>
           </div>
         </div>
       )}
@@ -1640,25 +1285,21 @@ function ProveDoE({ data, onSave }) {
   );
 }
 
-// ── SCHEDA OPERATIVA ──────────────────────────────────────────
 function SchedaOperativa({ data }) {
   const { scheda_operativa, blend } = data;
   const [blendId, setBlendId] = useState('B01');
   const schede = scheda_operativa.filter(s => s.blend_id === blendId);
   const blendInfo = blend.find(b => b.id === blendId);
-
   return (
     <div>
       <h2 style={{fontSize:16,fontWeight:600,marginBottom:4}}>Scheda operativa terzista</h2>
       <p style={{fontSize:13,color:'var(--n5)',marginBottom:16}}>Vista senza dosi riservate — da condividere con il terzista</p>
-
       <div className="input-group" style={{maxWidth:240,marginBottom:20}}>
         <label className="input-label">Blend</label>
         <select className="input" value={blendId} onChange={e=>setBlendId(e.target.value)}>
           {blend.map(b => <option key={b.id} value={b.id}>{b.id} — {b.nome}</option>)}
         </select>
       </div>
-
       {blendInfo && (
         <div className="card" style={{marginBottom:16,background:'var(--g0)',border:'1px solid var(--g2)'}}>
           <div style={{display:'flex',gap:20,flexWrap:'wrap'}}>
@@ -1668,23 +1309,15 @@ function SchedaOperativa({ data }) {
           </div>
         </div>
       )}
-
-      {schede.length === 0 ? (
-        <Alert type="amber">Nessuna scheda operativa disponibile per questo blend.</Alert>
-      ) : (
+      {schede.length===0?(<Alert type="amber">Nessuna scheda operativa disponibile per questo blend.</Alert>):
         ['A','B','C','D'].map(busta => {
           const items = schede.filter(s => s.busta === busta);
           if (!items.length) return null;
           return (
             <div key={busta} className="card" style={{marginBottom:12}}>
               <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
-                <div style={{width:32,height:32,background:'var(--g7)',color:'var(--wh)',borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:14}}>
-                  {busta}
-                </div>
-                <div>
-                  <div style={{fontWeight:600,fontSize:14}}>Busta {busta}</div>
-                  <div style={{fontSize:11,color:'var(--n5)'}}>{items.length} operazione{items.length>1?'i':''}</div>
-                </div>
+                <div style={{width:32,height:32,background:'var(--g7)',color:'var(--wh)',borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:14}}>{busta}</div>
+                <div><div style={{fontWeight:600,fontSize:14}}>Busta {busta}</div><div style={{fontSize:11,color:'var(--n5)'}}>{items.length} operazione{items.length>1?'i':''}</div></div>
               </div>
               {items.map((s,i) => (
                 <div key={i} style={{padding:'10px 0',borderTop:'1px solid var(--n2)'}}>
@@ -1694,37 +1327,48 @@ function SchedaOperativa({ data }) {
                     <span style={{fontSize:13,fontWeight:500,color:'var(--n7)'}}>{s.protocollo}</span>
                   </div>
                   {s.parametri && <p style={{fontSize:13,color:'var(--n6)',marginTop:6,lineHeight:1.6}}>{s.parametri}</p>}
-                  {s.note_critiche && (
-                    <div style={{background:'var(--r0)',border:'1px solid var(--r1)',borderRadius:6,padding:'6px 10px',marginTop:6}}>
-                      <span style={{fontSize:12,color:'var(--r8)'}}>⚠ {s.note_critiche}</span>
-                    </div>
-                  )}
+                  {s.note_critiche && (<div style={{background:'var(--r0)',border:'1px solid var(--r1)',borderRadius:6,padding:'6px 10px',marginTop:6}}><span style={{fontSize:12,color:'var(--r8)'}}>⚠ {s.note_critiche}</span></div>)}
                 </div>
               ))}
             </div>
           );
         })
-      )}
+      }
     </div>
   );
 }
 
-// ── APP ROOT ──────────────────────────────────────────────────
 function App() {
   const { data, loading, error } = useData();
   const [module, setModule] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const [blendState, setBlendState] = useState({
+    selectedIng: [], selectedAdd: [], selectedEnz: [],
+    lievitante: null, doses: {},
+  });
+
+  const addToBlend = (item, tipo) => {
+    setBlendState(prev => {
+      const key = tipo==='ing'?`i_${item.id}`:tipo==='add'?`a_${item.id}`:`e_${item.id}`;
+      const arr  = tipo==='ing'?'selectedIng':tipo==='add'?'selectedAdd':'selectedEnz';
+      if (prev[arr].find(x => x.id === item.id)) return prev;
+      const defaultDose = tipo==='ing' ? 10 : (item.dose_ottimale_pct||1);
+      return {...prev,[arr]:[...prev[arr],item],doses:{...prev.doses,[key]:defaultDose}};
+    });
+    setModule('blend');
+  };
 
   const renderModule = () => {
     if (loading) return <Loading />;
     if (error) return <Alert type="red">Errore caricamento dati: {error}</Alert>;
     switch(module) {
       case 'dashboard':   return <Dashboard data={data} />;
-      case 'ingredienti': return <Ingredienti data={data} />;
-      case 'additivi':    return <Additivi data={data} />;
-      case 'blend':       return <BlendBuilder data={data} />;
+      case 'ingredienti': return <Ingredienti data={data} onAddToBlend={(i)=>addToBlend(i,'ing')} />;
+      case 'additivi':    return <Additivi data={data} onAddToBlend={(a)=>addToBlend(a,'add')} />;
+      case 'blend':       return <BlendBuilder data={data} blendState={blendState} setBlendState={setBlendState} />;
       case 'matrici':     return <Matrici data={data} />;
-      case 'marketing':   return <Marketing data={data} />;
+      case 'marketing':   return <Marketing data={data} onAddToBlend={(i)=>addToBlend(i,'ing')} />;
       case 'doe':         return <ProveDoE data={data} />;
       case 'operativa':   return <SchedaOperativa data={data} />;
       default:            return <Dashboard data={data} />;
@@ -1747,7 +1391,6 @@ function App() {
           {data.ingredienti.length} ing · {data.additivi.length} add · {data.prove_doe.length} prove
         </div>
       </div>
-
       <div className="main">
         <div className={`sidebar-overlay${sidebarOpen?' open':''}`} onClick={()=>setSidebarOpen(false)}/>
         <nav className={`sidebar${sidebarOpen?' open':''}`}>
@@ -1760,7 +1403,6 @@ function App() {
             </div>
           ))}
         </nav>
-
         <main className="content">
           {renderModule()}
         </main>
