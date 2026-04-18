@@ -981,6 +981,7 @@ function HeatmapMatrice({ current, ingMap, addMap, isAdditivi }) {
             <div className={`heatmap-cell hm-${selCella.punteggio||0}`}>{selCella.punteggio||'—'}</div>
             <strong style={{fontSize:13}}>{nomeA(selCella.a)} × {nomeB(selCella.b)}</strong>
             {selCella.tipo && <Badge cls={selCella.tipo==='sinergia'?'badge-green':selCella.tipo==='competizione'||selCella.tipo==='attenzione'?'badge-amber':'badge-red'}>{selCella.tipo}</Badge>}
+            {selCella.affidabilita && <Badge cls={selCella.affidabilita==='A'?'badge-green':selCella.affidabilita==='M'?'badge-amber':'badge-red'} title="Affidabilità: A=fonte diretta, M=analogia, B=stima">Aff. {selCella.affidabilita}</Badge>}
             <button onClick={()=>setSelCella(null)} style={{marginLeft:'auto',color:'var(--n4)',fontSize:18,padding:'0 4px'}}>×</button>
           </div>
           <p style={{fontSize:13,color:'var(--n7)',lineHeight:1.6}}>{selCella.note}</p>
@@ -1005,7 +1006,7 @@ function HeatmapMatrice({ current, ingMap, addMap, isAdditivi }) {
                   const isSelected = selCella?.a===a && selCella?.b===b;
                   return (
                     <td key={b} style={{padding:2}}>
-                      {r ? (<div className={`heatmap-cell hm-${p}`} style={{outline:isSelected?'2px solid var(--g6)':'none'}} title={`${nomeA(a)} × ${nomeB(b)}: ${p}`} onClick={() => setSelCella(isSelected?null:{a,b,punteggio:p,note:r.note,fonte:r.fonte,tipo:r.tipo_interazione})}>{p}</div>)
+                      {r ? (<div className={`heatmap-cell hm-${p}`} style={{outline:isSelected?'2px solid var(--g6)':'none'}} title={`${nomeA(a)} × ${nomeB(b)}: ${p}`} onClick={() => setSelCella(isSelected?null:{a,b,punteggio:p,note:r.note,fonte:r.fonte,tipo:r.tipo_interazione,affidabilita:r.affidabilita})}>{p}</div>)
                       : (<div style={{width:32,height:32,borderRadius:4,background:'var(--n1)'}}/>)}
                     </td>
                   );
