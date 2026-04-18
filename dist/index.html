@@ -334,6 +334,13 @@ function Dashboard({ data }) {
         <div className="card-title"><span className="card-title-icon">◉</span>Note pre-DoE — da leggere prima di ogni sessione</div>
         <Alert type="amber"><strong>IG amidi da cotti:</strong> tapioca 94, fecola 98, mais waxy 99. IG blend pane base da cotto ~55-60. Non usare valori crudi per claim nutrizionali.</Alert>
         <Alert type="amber"><strong>GOX E03:</strong> se emerge texture gommosa eccessiva, inserire GOX 0.004% come variabile di controllo prima di modificare le variabili DoE.</Alert>
+        <Alert type="red">
+          <div><strong>⚠ Intervento umano richiesto — 4 criticità aperte:</strong><br/>
+          1. <strong>Claim IG su prodotto finito</strong> — quale valore IG dichiarare in etichetta (crudo vs cotto) richiede parere food law prima della commercializzazione.<br/>
+          2. <strong>Fave e favismo</strong> — verificare con specialista food law l'obbligo di etichettatura precauzionale VITC.<br/>
+          3. <strong>Amido di mais waxy</strong> — parere legale/nutrizionista sulla compatibilità col claim cereal-free prima dell'uso in etichetta.<br/>
+          4. <strong>Costi ingredienti</strong> — compilare costo_kg nel Google Sheet per abilitare il calcolo cascata nel Blend Builder.</div>
+        </Alert>
         <Alert type="green"><strong>Fitasi E06:</strong> inserire 0.02% in fase D-1 durante ammollo ceci — migliora biodisponibilità Fe/Zn/Ca/Mg senza alterare ricetta. Segnare se usata in ogni prova.</Alert>
       </div>
     </div>
@@ -429,6 +436,16 @@ function IngredienteDetail({ ing, igStati, onBack, onAddToBlend }) {
                 {ing.ig_cotto && <div><div className="stat-label">IG cotto</div><div style={{fontSize:20,fontWeight:600,fontFamily:'var(--mono)',color:ing.ig_cotto>55?'var(--r8)':'var(--g8)'}}>{ing.ig_cotto}</div></div>}
               </div>
               {ing.ig_fonte && <div style={{fontSize:11,color:'var(--n5)',marginTop:6,fontStyle:'italic'}}>{ing.ig_fonte}</div>}
+              {ing.ig_fonte && ing.ig_fonte.includes('SPECIFICA PROCESSO') && (
+                <div style={{marginTop:6,padding:'6px 10px',background:'var(--r0)',border:'1px solid var(--r1)',borderRadius:6,fontSize:12,color:'var(--r8)'}}>
+                  ⚠ <strong>Intervento richiesto:</strong> specificare la forma (cruda/soffiata/germogliata) usata nella ricetta prima di qualsiasi claim nutrizionale.
+                </div>
+              )}
+              {ing.ig_cotto && ing.ig_crudo && ing.ig_cotto > ing.ig_crudo + 10 && (
+                <div style={{marginTop:6,padding:'6px 10px',background:'var(--a0)',border:'1px solid var(--a1)',borderRadius:6,fontSize:12,color:'var(--a8)'}}>
+                  ⚠ IG da cotto ({ing.ig_cotto}) significativamente superiore al crudo ({ing.ig_crudo}). Usare il valore cotto per claim su prodotto finito. Verificare con food law prima di dichiararlo in etichetta.
+                </div>
+              )}
             </div>
           )}
           {igStati.length > 0 && (
@@ -511,7 +528,12 @@ function AdditivisDetail({ add, onBack, onAddToBlend }) {
           <div className="card-title">Note tecniche e interazioni</div>
           {add.meccanismo && <div style={{marginBottom:10}}><div style={{fontSize:11,color:'var(--n5)',marginBottom:4}}>Meccanismo</div><p style={{fontSize:13,color:'var(--n7)',lineHeight:1.6}}>{add.meccanismo}</p></div>}
           {add.interazione_critica && <div style={{background:'var(--a0)',border:'1px solid var(--a1)',borderRadius:6,padding:'8px 10px',marginTop:8}}><div style={{fontSize:11,fontWeight:600,color:'var(--a8)',marginBottom:4}}>⚠ Interazioni critiche</div><p style={{fontSize:12,color:'var(--a8)',lineHeight:1.5}}>{add.interazione_critica}</p></div>}
-          {add.note_tecniche && <div style={{marginTop:10}}><div style={{fontSize:11,color:'var(--n5)',marginBottom:4}}>Note tecniche</div><p style={{fontSize:12,color:'var(--n7)',lineHeight:1.6}}>{add.note_tecniche}</p></div>}
+          {{add.note_tecniche && <div style={{marginTop:10}}><div style={{fontSize:11,color:'var(--n5)',marginBottom:4}}>Note tecniche</div><p style={{fontSize:12,color:'var(--n7)',lineHeight:1.6}}>{add.note_tecniche}</p></div>}
+          {add.id==='U04' && (
+            <div style={{marginTop:8,padding:'6px 10px',background:'var(--a0)',border:'1px solid var(--a1)',borderRadius:6,fontSize:12,color:'var(--a8)'}}>
+              ⚠ <strong>Sostituito con EVO</strong> — decisione presa in CF-PAN-001 v2.0. Aggiornare le schede produzione se ancora indicato Ghee.
+            </div>
+          )}
         </div>
         {(add.storia_additivo||add.claim_salutistico_eu) && (
           <div className="card">
@@ -824,7 +846,7 @@ function BlendBuilder({ data, blendState, setBlendState }) {
 
       {tab==='costo' && (
         <div>
-          {!selectedIng.some(i=>i.costo_kg>0)&&(<Alert type="amber">Nessun ingrediente ha il costo_kg compilato. Inserisci i costi nel Google Sheet e rilancia il sync.</Alert>)}
+          {!selectedIng.some(i=>i.costo_kg>0)&&(<Alert type="red">⚠ <strong>Intervento richiesto:</strong> nessun ingrediente ha il costo_kg compilato. Inserire i prezzi nel Google Sheet (tab Ingredienti, colonna costo_kg) per abilitare il calcolo cascata. I costi sono disponibili solo presso Bart e la chef.</Alert>)}
           <div className="grid-2">
             <div className="card">
               <div className="card-title">Parametri di calcolo</div>
