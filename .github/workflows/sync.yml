@@ -38,6 +38,7 @@ jobs:
           protocol: ftps
           port: 21
           security: loose
+          timeout: 60000
           exclude: |
             **/.git*
             **/.git*/**
